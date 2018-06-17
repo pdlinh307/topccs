@@ -3,3 +3,4 @@ gunicorn
 supervisor
 requests
 mysql-connector-python
+panoramisk
