@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify
-import datetime
 from campaign import Campaign
 from exceptions import CampaignError
 
+""" Initial instances """
 app = Flask(__name__)
-camp = Campaign()
+camp = Campaign.get_instance()
+camp.db_connect(config='config/mysql.conf')
 
 
 @app.route('/api/sendCampaign', methods=['POST'])
 def send_campaign():
     payload = request.json
     try:
-        # Check payload
         camp.check_payload(json=payload)
-        # Check unique id
         if camp.check_unique_id(payload['campaignid']):
             camp.insert_one()
     except CampaignError as e:
@@ -34,7 +33,3 @@ def send_campaign():
     #     'status': callcenter_status,
     #     'description': '%s/%s contacts are valid' % (len(valid_contacts), len(contacts))
     # })
-
-
-if __name__ == '__main__':
-    app.run()

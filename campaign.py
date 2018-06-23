@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import mysql.connector
 import datetime
 from exceptions import CampaignError
@@ -5,10 +6,28 @@ from exceptions import CampaignError
 
 class Campaign(object):
     __required_fields = ['campaignid', 'typeid', 'contact', 'code']
-    # __mysql_cnx = None
+    __instance = None
+    __mysql_cnx = None
+
+    @staticmethod
+    def get_instance():
+        """ Static access method """
+        if Campaign.__instance is None:
+            Campaign()
+        return Campaign.__instance
 
     def __init__(self):
-        self.__mysql_cnx = mysql.connector.connect(option_files='config/mysql.conf')
+        """ Private constructor """
+        if Campaign.__instance is not None:
+            raise CampaignError('CP_SINGLETON_CLASS')
+        else:
+            Campaign.__instance = self
+
+    def db_connect(self, config):
+        try:
+            self.__mysql_cnx = mysql.connector.connect(option_files=config)
+        except:
+            raise CampaignError('DB_CONNECT_ERROR')
 
     def check_payload(self, json):
         if json is None:

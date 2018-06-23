@@ -1,6 +1,6 @@
 flask
 gunicorn
-supervisor
+#supervisor
 requests
 mysql-connector-python
 panoramisk
