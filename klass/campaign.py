@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mysql.connector
 import datetime
-from exceptions import CampaignError
+from klass.exceptions import CampaignError
 
 
 class Campaign(object):

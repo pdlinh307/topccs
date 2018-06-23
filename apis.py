@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify
-from campaign import Campaign
-from exceptions import CampaignError
+from klass.campaign import Campaign
+from klass.exceptions import CampaignError
 
 """ Initial instances """
 app = Flask(__name__)
