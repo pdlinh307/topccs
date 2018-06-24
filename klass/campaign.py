@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import mysql.connector
-import datetime
+from datetime import datetime, timedelta
 from klass.exceptions import CampaignError
 
 
 class Campaign(object):
-    __required_fields = ['campaignid', 'typeid', 'contact', 'code']
     __instance = None
     __mysql_cnx = None
 
@@ -30,36 +29,42 @@ class Campaign(object):
             raise CampaignError('DB_CONNECT_ERROR')
 
     def check_payload(self, json):
+        required_fields = ['campaignid', 'typeid', 'contact', 'code', 'start_time', 'end_time']
         if json is None:
             raise CampaignError('CP_NO_PAYLOAD')
-        for f in self.__required_fields:
+        for f in required_fields:
             if f not in json:
                 raise CampaignError('CP_MISS_PARAM')
         return True
 
     def check_unique_id(self, campaign_id):
         row = self.select_one(campaign_id)
-        if row.__len__ == 1:
+        if row.__len__() == 1:
             raise CampaignError('CP_ID_EXIST')
         return True
 
     def select_one(self, campaign_id):
         cursor = self.__mysql_cnx.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM `campaign` WHERE `id` = %s LIMIT 1", (campaign_id,))
+            cursor.execute("SELECT * FROM `campaigns` WHERE `campaign_id` = %s LIMIT 1", (campaign_id,))
             return cursor.fetchone()
         except:
             raise CampaignError('CP_DB_ERROR')
 
     def insert_one(self, json):
-        # todo: parsing date time from input data
+        time_start = datetime.strptime(json['start_time'], 'YYYY-MM-DDTHH:MM:SS.mmmmmm')
+        time_end = datetime.strptime(json['end_time'], 'YYYY-MM-DDTHH:MM:SS.mmmmmm')
+        if time_end < time_start or time_end < datetime.now():
+            raise CampaignError('CP_DATA_INVALID')
         cursor = self.__mysql_cnx.cursor(dictionary=True)
         try:
-            cursor.execute("INSERT INTO `campaign`"
-                           "(`id`, `name`, `start`, `end`, `type_id`, `code`, `receive_status`) "
-                           "VALUES (%s, %s, %s, %s, %s, %s)",
-                           (json['campaignid'], '', datetime.datetime(2018, 6, 6, 14, 0, 0)),
-                           datetime.datetime(2018, 6, 10, 20, 0, 12), json['type_id'], json['code'])
-            return cursor.lastrowid
+            cursor.execute("INSERT INTO `campaigns`"
+                           "(`campaign_id`, `type_id`, `code`, `time_start`, `time_end`, `status_received`, `number_contacts`)"
+                           "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                           (json['campaignid'], json['typeid'], json['code'], time_start, time_end, True, len(json['contact'])))
         except:
             raise CampaignError('CP_DB_ERROR')
+        else:
+            return cursor.lastrowid
+
+    # Todo: create schedule

@@ -14,8 +14,8 @@ def send_campaign():
     payload = request.json
     try:
         camp.check_payload(json=payload)
-        if camp.check_unique_id(payload['campaignid']):
-            camp.insert_one()
+        if camp.check_unique_id(int(payload['campaignid'])):
+            camp.insert_one(payload)
     except CampaignError as e:
         return jsonify({'status': 0, 'error_msg': e.msg}), 400
 
@@ -24,12 +24,3 @@ def send_campaign():
     # for c in contacts:
     #     if 'phonenumber' in c:
     #         valid_contacts.append(c)
-    #
-    # # todo: gui lenh chay kich ban cho call center
-    # callcenter_status = 0
-    # return jsonify({
-    #     'campaignid': payload['campaignid'],
-    #     'code': payload['code'],
-    #     'status': callcenter_status,
-    #     'description': '%s/%s contacts are valid' % (len(valid_contacts), len(contacts))
-    # })
