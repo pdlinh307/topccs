@@ -26,6 +26,9 @@ class Campaign(object):
             self.__config = configparser.ConfigParser()
             self.__config.read(config)
 
+    def __del__(self):
+        self.__mysql_cnx.close()
+
     def db_connect(self, dbconfig):
         try:
             self.__mysql_cnx = mysql.connector.connect(option_files=dbconfig)
@@ -35,7 +38,7 @@ class Campaign(object):
     def cp_check_payload(self, json):
         required_fields = self.__config['send_campaign']['cp_required_fields'].split(',')
         if json is None:
-            raise CampaignError('CP_NO_PAYLOAD')
+            raise CampaignError('CP_INVALID_PAYLOAD')
         for f in required_fields:
             if f not in json:
                 raise CampaignError('CP_MISS_PARAM')
@@ -44,7 +47,7 @@ class Campaign(object):
     def cp_check_unique_id(self, campaign_id):
         row = self.cp_select_one(campaign_id)
         if row is not None:
-            raise CampaignError('CP_ID_EXIST')
+            raise CampaignError('CP_ID_EXISTED')
         return True
 
     def cp_select_one(self, campaign_id):
@@ -54,6 +57,8 @@ class Campaign(object):
             return cursor.fetchone()
         except:
             raise CampaignError('DB_ERROR')
+        finally:
+            cursor.close()
 
     def cp_insert_one(self, json):
         try:
@@ -61,19 +66,33 @@ class Campaign(object):
             time_start = datetime.strptime(json['starttime'], date_format)
             time_end = datetime.strptime(json['endtime'], date_format)
             if time_end < time_start or time_end < datetime.now():
-                raise CampaignError('CP_DATA_INVALID')
+                raise CampaignError('CP_INVALID_PARAM')
         except ValueError:
             raise CampaignError('CP_DATETIME_FORMAT')
 
         cursor = self.__mysql_cnx.cursor(dictionary=True)
         try:
-            cursor.execute("INSERT INTO `campaigns`"
-                           "(`campaign_id`, `type_id`, `code`, `time_start`, `time_end`)"
-                           "VALUES (%s, %s, %s, %s, %s)",
-                           (int(json['campaignid']), int(json['typeid']), json['code'], time_start, time_end))
-            return cursor.lastrowid
+            cursor.execute("INSERT INTO `campaigns`(`campaign_id`, `type_id`, `time_start`, `time_end`)"
+                           "VALUES (%s, %s, %s, %s)",
+                           (int(json['campaignid']), int(json['typeid']), time_start, time_end))
+            return cursor.rowcount
         except:
             raise CampaignError('DB_ERROR')
+        finally:
+            cursor.close()
+
+    def cp_close_one(self, campaign_id):
+        row = self.cp_select_one(campaign_id)
+        if row is None:
+            raise CampaignError('CP_ID_NOT_EXISTED')
+        cursor = self.__mysql_cnx.cursor(dictionary=True)
+        try:
+            cursor.execute("UPDATE `campaigns` SET `status_closed` = TRUE WHERE `campaign_id` = %s", (campaign_id,))
+            return cursor.rowcount
+        except:
+            raise CampaignError('DB_ERROR')
+        finally:
+            cursor.close()
 
     def cts_get_valid_list(self, contacts):
         valid_contacts = list(filter(lambda c: self.__config['send_campaign']['cts_required_field'] in c, contacts))
@@ -90,5 +109,7 @@ class Campaign(object):
             return cursor.rowcount
         except:
             raise CampaignError('DB_ERROR')
+        finally:
+            cursor.close()
 
     # Todo: create schedule

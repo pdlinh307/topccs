@@ -1,14 +1,18 @@
+# -*- coding: utf-8 -*-
+
+
 class CampaignError(Exception):
     table_mapping_errors = dict(
-        CP_NO_PAYLOAD='Payload is not available, please check "Content-Type" header in request',
-        CP_MISS_PARAM='Missing parameter',
-        CP_ID_EXIST='CampaignId has already exists',
-        CP_SINGLETON_CLASS="Use get_instance() method to initial object",
-        CP_DATA_INVALID="Input data is not valid",
-        CP_DATETIME_FORMAT="Datetime fields is wrong format",
-        CTS_EMPTY="Contact list is empty",
-        DB_ERROR='Database error',
-        DB_CONNECT_ERROR='Database connect error'
+        DB_ERROR='Lỗi xảy ra trong quá trình thao tác với cơ sở dữ liệu.',
+        DB_CONNECT_ERROR='Lỗi kết nối tới cơ sở dữ liệu.',
+        CP_INVALID_PAYLOAD='Kiểu dữ liệu đầu vào không hợp lệ, kiểm tra "Content-Type" của HTTP Request Header.',
+        CP_INVALID_PARAM="Tham số đầu vào không hợp lệ.",
+        CP_MISS_PARAM='Dữ liệu đầu vào thiếu thông tin bắt buộc.',
+        CP_ID_EXISTED='CampaignId đã tồn tại. Không thể tạo campaign mới trùng với ID của campaign cũ.',
+        CP_ID_NOT_EXISTED="CampaignId không tồn tại.",
+        CP_SINGLETON_CLASS="Hãy sử dụng phương thức get_instance() để khởi tạo đối tượng của lớp singleton.",
+        CP_DATETIME_FORMAT="Sử dụng sai format các trường dữ liệu kiểu DATETIME.",
+        CTS_EMPTY="Danh sách contact cần gọi (hợp lệ) rỗng."
     )
 
     def __init__(self, code):
