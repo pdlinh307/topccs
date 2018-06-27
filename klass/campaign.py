@@ -1,35 +1,39 @@
 # -*- coding: utf-8 -*-
 import mysql.connector
-from datetime import datetime, timedelta
+import configparser
+from datetime import datetime
 from klass.exceptions import CampaignError
 
 
 class Campaign(object):
     __instance = None
     __mysql_cnx = None
+    __config = None
 
     @staticmethod
-    def get_instance():
+    def get_instance(config):
         """ Static access method """
         if Campaign.__instance is None:
-            Campaign()
+            Campaign(config=config)
         return Campaign.__instance
 
-    def __init__(self):
+    def __init__(self, config):
         """ Private constructor """
         if Campaign.__instance is not None:
             raise CampaignError('CP_SINGLETON_CLASS')
         else:
             Campaign.__instance = self
+            self.__config = configparser.ConfigParser()
+            self.__config.read(config)
 
-    def db_connect(self, config):
+    def db_connect(self, dbconfig):
         try:
-            self.__mysql_cnx = mysql.connector.connect(option_files=config)
+            self.__mysql_cnx = mysql.connector.connect(option_files=dbconfig)
         except:
             raise CampaignError('DB_CONNECT_ERROR')
 
-    def check_payload(self, json):
-        required_fields = ['campaignid', 'typeid', 'contact', 'code', 'start_time', 'end_time']
+    def cp_check_payload(self, json):
+        required_fields = self.__config['send_campaign']['cp_required_fields'].split(',')
         if json is None:
             raise CampaignError('CP_NO_PAYLOAD')
         for f in required_fields:
@@ -37,34 +41,54 @@ class Campaign(object):
                 raise CampaignError('CP_MISS_PARAM')
         return True
 
-    def check_unique_id(self, campaign_id):
-        row = self.select_one(campaign_id)
-        if row.__len__() == 1:
+    def cp_check_unique_id(self, campaign_id):
+        row = self.cp_select_one(campaign_id)
+        if row is not None:
             raise CampaignError('CP_ID_EXIST')
         return True
 
-    def select_one(self, campaign_id):
+    def cp_select_one(self, campaign_id):
         cursor = self.__mysql_cnx.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM `campaigns` WHERE `campaign_id` = %s LIMIT 1", (campaign_id,))
             return cursor.fetchone()
         except:
-            raise CampaignError('CP_DB_ERROR')
+            raise CampaignError('DB_ERROR')
 
-    def insert_one(self, json):
-        time_start = datetime.strptime(json['start_time'], 'YYYY-MM-DDTHH:MM:SS.mmmmmm')
-        time_end = datetime.strptime(json['end_time'], 'YYYY-MM-DDTHH:MM:SS.mmmmmm')
-        if time_end < time_start or time_end < datetime.now():
-            raise CampaignError('CP_DATA_INVALID')
+    def cp_insert_one(self, json):
+        try:
+            date_format = self.__config['send_campaign']['cp_datetime_format']
+            time_start = datetime.strptime(json['starttime'], date_format)
+            time_end = datetime.strptime(json['endtime'], date_format)
+            if time_end < time_start or time_end < datetime.now():
+                raise CampaignError('CP_DATA_INVALID')
+        except ValueError:
+            raise CampaignError('CP_DATETIME_FORMAT')
+
         cursor = self.__mysql_cnx.cursor(dictionary=True)
         try:
             cursor.execute("INSERT INTO `campaigns`"
-                           "(`campaign_id`, `type_id`, `code`, `time_start`, `time_end`, `status_received`, `number_contacts`)"
-                           "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                           (json['campaignid'], json['typeid'], json['code'], time_start, time_end, True, len(json['contact'])))
-        except:
-            raise CampaignError('CP_DB_ERROR')
-        else:
+                           "(`campaign_id`, `type_id`, `code`, `time_start`, `time_end`)"
+                           "VALUES (%s, %s, %s, %s, %s)",
+                           (int(json['campaignid']), int(json['typeid']), json['code'], time_start, time_end))
             return cursor.lastrowid
+        except:
+            raise CampaignError('DB_ERROR')
+
+    def cts_get_valid_list(self, contacts):
+        valid_contacts = list(filter(lambda c: self.__config['send_campaign']['cts_required_field'] in c, contacts))
+        if len(valid_contacts) == 0:
+            raise CampaignError('CTS_EMPTY')
+        return valid_contacts
+
+    def cts_insert_many(self, contacts, campaign_id):
+        cursor = self.__mysql_cnx.cursor(dictionary=True)
+        contacts = list(map(lambda c: (campaign_id, int(c['id']), c['phonenumber'], c.get('linkedit', None)), contacts))
+        try:
+            cursor.executemany("INSERT INTO `cdr`(`campaign_id`, `contact_id`, `phone_number`, `linkedit`)"
+                               "VALUES (%s, %s, %s, %s)", contacts)
+            return cursor.rowcount
+        except:
+            raise CampaignError('DB_ERROR')
 
     # Todo: create schedule
