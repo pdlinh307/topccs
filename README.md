@@ -7,6 +7,9 @@ Release date: 27/06/2018
 
 # Administrator's guide
 A step by step guide for system administrators or anyone else who might deploy this project.
+
+If you are CRM developer, please read [this document](docs/apispec.md).
+
 ## Requirements
 * *CentOS 7*
 * *MySQL 5.7 or later*
@@ -81,12 +84,3 @@ sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 
 ## Service
 `updating ...`
-
-# API docs
-The technical reference to CRM developer.
-
-`updating ...`
-
-|#      |URL    |Input  | Output    |
-|:-------------|:-------------|:-------------|:-----|
-|1    |   |   |   |
