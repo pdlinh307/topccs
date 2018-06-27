@@ -34,6 +34,7 @@ def close_campaign():
     try:
         if campaign_id is None:
             raise CampaignError('CP_MISS_PARAM')
+        campaign_id = int(campaign_id)
         camp.cp_close_one(campaign_id=campaign_id)
     except CampaignError as e:
         return jsonify(dict(campaignid=campaign_id, code=code, status=0, error_msg=e.msg)), 400
