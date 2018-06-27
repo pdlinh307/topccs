@@ -67,6 +67,8 @@ sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 ```
 
 ## Configurations
+### Project's config
+`updating ...`
 ### Supervisor
 #### API web services
 `updating ...`
