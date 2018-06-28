@@ -6,9 +6,8 @@ from klass import conf
 
 """ Initial instances """
 app = Flask(__name__)
-camp = Campaign.get_instance(config=conf.get_section('api'))
+camp = Campaign.get_instance(config=conf.get_section(name='api'))
 # Todo: basic authentication
-# Todo: connection poll
 # Todo: scheduler
 
 

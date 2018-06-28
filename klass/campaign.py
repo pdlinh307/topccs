@@ -71,6 +71,7 @@ class Campaign(object):
             cursor.close()
 
     def cp_close_one(self, campaign_id):
+        # Todo: cancel all schedule task of this campaign
         row = self.cp_select_one(campaign_id)
         if row is None:
             raise CampaignError('CP_ID_NOT_EXISTED')
@@ -88,6 +89,18 @@ class Campaign(object):
         if len(valid_contacts) == 0:
             raise CampaignError('CTS_EMPTY')
         return valid_contacts
+
+    @staticmethod
+    def cdr_select_one(campaign_id, contact_id):
+        cursor = db.get_cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM `cdr` WHERE `campaign_id` = %s AND `contact_id` = %s LIMIT 1",
+                           (campaign_id, contact_id))
+            return cursor.fetchone()
+        except:
+            raise DBError('DB_ERROR')
+        finally:
+            cursor.close()
 
     @staticmethod
     def cts_insert_many(contacts, campaign_id):
