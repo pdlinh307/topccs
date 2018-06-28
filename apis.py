@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
-from klass.exceptions import CampaignError
+from klass.exceptions import CampaignError, DBError
+from klass import conf
 
 """ Initial instances """
 app = Flask(__name__)
-camp = Campaign.get_instance(config='config/campaign.conf')
-camp.db_connect(dbconfig='config/mysql.conf')
+camp = Campaign.get_instance(config=conf.get_section('api'))
+# Todo: basic authentication
+# Todo: connection poll
+# Todo: scheduler
 
 
 @app.route('/api/sendCampaign', methods=['POST'])
@@ -20,7 +23,7 @@ def send_campaign():
         """ Insert contacts in a campaign """
         valid_contacts = camp.cts_get_valid_list(contacts=payload['contact'])
         camp.cts_insert_many(contacts=valid_contacts, campaign_id=int(payload['campaignid']))
-    except CampaignError as e:
+    except (CampaignError, DBError) as e:
         return jsonify(dict(campaignid=payload['campaignid'], code=payload['code'], status=0, error_msg=e.msg)), 400
     else:
         return jsonify(dict(campaignid=payload['campaignid'], code=payload['code'], status=1))
@@ -36,7 +39,7 @@ def close_campaign():
             raise CampaignError('CP_MISS_PARAM')
         campaign_id = int(campaign_id)
         camp.cp_close_one(campaign_id=campaign_id)
-    except CampaignError as e:
+    except (CampaignError, DBError) as e:
         return jsonify(dict(campaignid=campaign_id, code=code, status=0, error_msg=e.msg)), 400
     else:
         return jsonify(dict(campaignid=campaign_id, code=code, status=1))
