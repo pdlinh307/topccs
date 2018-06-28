@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector.errors import OperationalError
 from klass.exceptions import DBError
 
 
@@ -20,16 +21,19 @@ class MySQLConnector(object):
             raise DBError('DB_SINGLETON_CLASS')
         MySQLConnector.__instance = self
         self.__option_file = option_file
-        self._db_connect()
+        self._connect()
 
     def __del__(self):
         self.__cnx.close()
 
-    def _db_connect(self):
+    def _connect(self):
         try:
             self.__cnx = mysql.connector.connect(option_files=self.__option_file)
         except:
             raise DBError('DB_CONNECT_ERROR')
 
     def get_cursor(self, **kwargs):
+        if not self.__cnx.is_connected():
+            self._connect()
         return self.__cnx.cursor(**kwargs)
+        # except OperationalError:
