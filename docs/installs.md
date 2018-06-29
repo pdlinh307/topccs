@@ -99,16 +99,16 @@ timeout         = 3
 #### Supervisord
 **/etc/supervisor/supervisord.conf**
 
-```text
+```ini
 # change 2 last rows
 [include]
 files = conf.d/*.ini
 ```
 
 #### Worker
-- **/etc/supervisor/conf.d/topccs-wk.ini**
+**/etc/supervisor/conf.d/topccs-wk.ini**
 
-```text
+```ini
 [program:topccs-wk]
 command         = /usr/bin/celery -A cworker worker -E -l INFO --autoscale=8,4
 directory       = /home/dev/topccs
@@ -120,9 +120,9 @@ stderr_logfile  = /var/log/supervisor/topccs-wk.err.log
 ```
 
 #### API
-- **/etc/supervisor/conf.d/topccs-api.ini**
+**/etc/supervisor/conf.d/topccs-api.ini**
 
-```text
+```ini
 [program:topccs-api]
 command         = /usr/bin/gunicorn -w 9 -b 127.0.0.1:3007 apis:app --access-logfile - --max-requests 5000 --max-requests-jitter 10
 directory       = /home/dev/topccs
