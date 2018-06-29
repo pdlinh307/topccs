@@ -2,13 +2,15 @@
 This project was developed by [Realtel Vietnam](https://realtel.vn).
 ## Current version
 ```text
-Version: 0.1
-Release date: 27/06/2018
+Version: 0.2
+Release date: 29/06/2018
 ```
 
 # Documents
-* For CRM developers: [link](docs/api_spec.md)
-* For administrators: [link](docs/admin_guide.md)
+You are:
+* [CRM Developer](docs/apispecs.md)
+* [Sys Admin](docs/installs.md)
 
 # Release notes
-* **27/06/2018**: version 0.1
+* **27/06/2018**: version `0.1`
+* **29/06/2018**: version `0.2`
