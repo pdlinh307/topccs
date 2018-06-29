@@ -1,25 +1,15 @@
+# -*- coding: utf-8 -*-
 import mysql.connector
 from klass.exceptions import DBError
+from klass.singleton import Singleton
 
 
-class MySQLConnector(object):
-    __instance = None
+class MySQLConnector(metaclass=Singleton):
     __cnx = None
-    __option_file = None
+    __option_files = None
 
-    @staticmethod
-    def get_instance(option_file):
-        """ Static access method """
-        if MySQLConnector.__instance is None:
-            MySQLConnector(option_file=option_file)
-        return MySQLConnector.__instance
-
-    def __init__(self, option_file):
-        """ Private constructor """
-        if MySQLConnector.__instance is not None:
-            raise DBError('DB_SINGLETON_CLASS')
-        MySQLConnector.__instance = self
-        self.__option_file = option_file
+    def __init__(self, option_files):
+        self.__option_files = option_files
         self._connect()
 
     def __del__(self):
@@ -27,11 +17,11 @@ class MySQLConnector(object):
 
     def _connect(self):
         try:
-            self.__cnx = mysql.connector.connect(option_files=self.__option_file, use_pure=True)
+            self.__cnx = mysql.connector.connect(option_files=self.__option_files, use_pure=True)
         except:
             raise DBError('DB_CONNECT_ERROR')
 
-    def get_cursor(self, **kwargs):
+    def cursor(self, **kwargs):
         if not self.__cnx.is_connected():
             self._connect()
         return self.__cnx.cursor(**kwargs)

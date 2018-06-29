@@ -3,8 +3,6 @@
 
 class CampaignError(Exception):
     table_mapping_errors = dict(
-        DB_ERROR='Lỗi xảy ra trong quá trình thao tác với cơ sở dữ liệu.',
-        DB_CONNECT_ERROR='Lỗi kết nối tới cơ sở dữ liệu.',
         CP_INVALID_PAYLOAD='Kiểu dữ liệu đầu vào không hợp lệ, kiểm tra "Content-Type" của HTTP Request Header.',
         CP_INVALID_PARAM="Tham số đầu vào không hợp lệ.",
         CP_MISS_PARAM='Dữ liệu đầu vào thiếu thông tin bắt buộc.',
@@ -25,20 +23,7 @@ class CampaignError(Exception):
 class DBError(Exception):
     table_mapping_errors = dict(
         DB_ERROR='Lỗi xảy ra trong quá trình thao tác với cơ sở dữ liệu.',
-        DB_CONNECT_ERROR='Lỗi kết nối tới cơ sở dữ liệu.',
-        DB_SINGLETON_CLASS="Hãy sử dụng phương thức get_instance() để khởi tạo đối tượng của lớp singleton."
-    )
-
-    def __init__(self, code):
-        self.msg = self.table_mapping_errors[code]
-
-    def __str__(self):
-        return repr(self.msg)
-
-
-class ConfigError(Exception):
-    table_mapping_errors = dict(
-        CF_SINGLETON_CLASS="Hãy sử dụng phương thức get_instance() để khởi tạo đối tượng của lớp singleton."
+        DB_CONNECT_ERROR='Lỗi kết nối tới cơ sở dữ liệu.'
     )
 
     def __init__(self, code):

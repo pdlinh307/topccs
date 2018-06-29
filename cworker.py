@@ -1,9 +1,9 @@
 import requests
 from celery import Celery
 from celery.utils.log import get_task_logger
-from klass import conf
 from klass.campaign import Campaign
 from klass.exceptions import DBError, CampaignError
+from klass import conf
 
 celery_app = Celery('cworker')
 celery_app.conf.update(
@@ -14,10 +14,10 @@ celery_app.conf.update(
     timezone='Asia/Ho_Chi_Minh',
 )
 logger = get_task_logger(__name__)
-conf_callback = conf.get_section(name='callback')
+conf_callback = conf.section(name='callback')
 
 
-@celery_app.task(max_retry=3)
+@celery_app.task()
 def finish_campaign(campaign_id):
     crm_callback = conf_callback['finish_campaign']
     try:
@@ -60,7 +60,7 @@ def update_campaign(campaign_id, contact_id):
             answertime=cdr['time_answer'],
             endtime=cdr['time_end'],
             duration=cdr['duration'],
-            ringtime=cdr['duration']-cdr['billsec'],
+            ringtime=cdr['duration'] - cdr['billsec'],
             link_down_record=cdr['record_url'],
             status=cdr['disposition'],
             callid=cdr['uniqueid']

@@ -60,7 +60,7 @@ database=topccs
 autocommit=True
 ```
 
-- **config/campaign.conf**
+- **config/app.conf**
 
 ```ini
 [ami]

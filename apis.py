@@ -7,7 +7,7 @@ from klass import conf
 
 """ Initial instances """
 app = Flask(__name__)
-camp = Campaign.get_instance(config=conf.get_section(name='api'))
+camp = Campaign(config=conf.section(name='api'))
 # Todo: basic authentication
 # Todo: scheduler
 
@@ -54,7 +54,7 @@ def get_campaign(campaignid):
     else:
         for k, v in campaign.items():
             if isinstance(v, datetime):
-                campaign[k] = v.strftime(conf.get_section(name='api')['datetime_format'])
+                campaign[k] = v.strftime(conf.section(name='api')['datetime_format'])
         return jsonify(campaign)
 
 
@@ -67,5 +67,5 @@ def get_cdr(campaignid, contactid):
     else:
         for k, v in cdr.items():
             if isinstance(v, datetime):
-                cdr[k] = v.strftime(conf.get_section(name='api')['datetime_format'])
+                cdr[k] = v.strftime(conf.section(name='api')['datetime_format'])
         return jsonify(cdr)
