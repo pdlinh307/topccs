@@ -54,7 +54,7 @@ def get_campaign(campaignid):
     else:
         for k, v in campaign.items():
             if isinstance(v, datetime):
-                campaign[k] = v.isoformat(sep=' ', timespec='seconds')
+                campaign[k] = v.strftime(conf.get_section(name='api')['datetime_format'])
         return jsonify(campaign)
 
 
@@ -67,5 +67,5 @@ def get_cdr(campaignid, contactid):
     else:
         for k, v in cdr.items():
             if isinstance(v, datetime):
-                cdr[k] = v.isoformat(sep=' ', timespec='seconds')
+                cdr[k] = v.strftime(conf.get_section(name='api')['datetime_format'])
         return jsonify(cdr)

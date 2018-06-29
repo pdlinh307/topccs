@@ -5,22 +5,13 @@ If you are CRM developer, please read [this document](docs/api_spec.md).
 
 ## Requirements
 * *CentOS 7*
-* *MySQL 5.7 or later*
-* *Python 3.6.x*
+* *MySQL 8.0 (recommended) or MariaDB (10.3)*
+* *Python >= 3.5 (3.6.x recommended)*
+* *Redis >= 3.0*
 * *Asterisk 13*
 
 ## Setting up environments
-### OS
-```bash
-sudo yum -y install epel-release
-sudo yum -y update
-```
 ### Database 
-#### Install mysql server (if not exists)
-```bash
-sudo yum -y install mysql-server
-mysql_secure_installation
-```
 #### Create database and user 
 Replace `db_name`, `hostname` and `p4ssw0rd` with your username, hostname and password respectively. 
 ```sql
@@ -30,18 +21,11 @@ GRANT ALL ON topccs.* TO 'db_user'@'hostname';
 FLUSH PRIVILEGES;
 ```
 #### Import
-Replace `db_user` with username that created above.
+Replace `db_user` with username that created in previous step.
 ```bash
 mysql -u db_user -p topccs < topccs.sql
 ```
 ### Python
-#### Install python
-```bash
-sudo yum install python3.6
-sudo rm -f /usr/bin/python3
-sudo ln -s /usr/bin/python3.6 /usr/bin/python3
-python3 --version
-```
 #### Install pip
 Download [get-pip.py](https://bootstrap.pypa.io/get-pip.py).
 ```bash
@@ -64,7 +48,45 @@ sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 
 ## Configurations
 ### Project's config
-`updating ...`
+* **config/mysql.conf**
+```ini
+[client]
+host=<hostname_or_ipaddress>
+port=3306
+user=<username_for_mysql>
+password=<password_for_username>
+database=topccs
+autocommit=True
+```
+* **config/campaign.conf**
+```ini
+[ami]
+host        = <hostname_or_ipaddress>
+port        = 5038
+user        = <username>
+secret      = <secret_for_username>
+encoding    = utf8
+
+[trunk]
+context     = SIP/mkt
+queue       = 8000
+timeout     = 30
+
+[scheduler]
+retry       = 3
+interval    = 3600
+rate_limit  = 2m
+
+[api]
+datetime_format     = %%Y-%%m-%%d %%H:%%M:%%S
+cp_required_fields  = campaignid,typeid,contact,code,starttime,endtime
+cts_required_field  = phonenumber
+
+[callback]
+finish_campaign = http://crm.native.vn/api/FinishCampaign
+update_campaign = http://crm.native.vn/api/UpdateCampaign
+timeout         = 3
+```
 ### Supervisor
 #### API web services
 `updating ...`
