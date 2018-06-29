@@ -48,7 +48,8 @@ sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 
 ## Configurations
 ### Project's config
-* **config/mysql.conf**
+- **config/mysql.conf**
+
 ```text
 [client]
 host=<hostname_or_ipaddress>
@@ -58,7 +59,9 @@ password=<password_for_username>
 database=topccs
 autocommit=True
 ```
-* **config/campaign.conf**
+
+- **config/campaign.conf**
+
 ```text
 [ami]
 host        = <hostname_or_ipaddress>
@@ -87,6 +90,7 @@ finish_campaign = http://crm.native.vn/api/FinishCampaign
 update_campaign = http://crm.native.vn/api/UpdateCampaign
 timeout         = 3
 ```
+
 ### Supervisor
 #### API web services
 `updating ...`
