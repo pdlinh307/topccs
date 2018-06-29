@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
 from klass.exceptions import CampaignError, DBError
@@ -47,10 +48,13 @@ def close_campaign():
 @app.route('/api/getCampaign/<int:campaignid>', methods=['GET'])
 def get_campaign(campaignid):
     try:
-        campaign = camp.cp_get_one(campaign_id=campaignid)
+        campaign = camp.cp_select_one(campaign_id=campaignid)
     except (CampaignError, DBError) as e:
         return jsonify(dict(error_msg=e.msg)), 400
     else:
+        for k, v in campaign.items():
+            if isinstance(v, datetime):
+                campaign[k] = v.isoformat(sep=' ', timespec='seconds')
         return jsonify(campaign)
 
 
@@ -61,4 +65,7 @@ def get_cdr(campaignid, contactid):
     except (CampaignError, DBError) as e:
         return jsonify(dict(error_msg=e.msg)), 400
     else:
+        for k, v in cdr.items():
+            if isinstance(v, datetime):
+                cdr[k] = v.isoformat(sep=' ', timespec='seconds')
         return jsonify(cdr)

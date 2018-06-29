@@ -1,5 +1,4 @@
 import mysql.connector
-from mysql.connector.errors import OperationalError
 from klass.exceptions import DBError
 
 
@@ -28,7 +27,7 @@ class MySQLConnector(object):
 
     def _connect(self):
         try:
-            self.__cnx = mysql.connector.connect(option_files=self.__option_file)
+            self.__cnx = mysql.connector.connect(option_files=self.__option_file, use_pure=True)
         except:
             raise DBError('DB_CONNECT_ERROR')
 
