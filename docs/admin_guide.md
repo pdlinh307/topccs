@@ -50,7 +50,7 @@ sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 ### Project's config
 - **config/mysql.conf**
 
-```text
+```ini
 [client]
 host=<hostname_or_ipaddress>
 port=3306
@@ -62,7 +62,7 @@ autocommit=True
 
 - **config/campaign.conf**
 
-```text
+```ini
 [ami]
 host        = <hostname_or_ipaddress>
 port        = 5038
