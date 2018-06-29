@@ -94,16 +94,20 @@ finish_campaign = http://crm.native.vn/api/FinishCampaign
 update_campaign = http://crm.native.vn/api/UpdateCampaign
 timeout         = 3
 ```
+
 ### Supervisor
 #### Supervisord
-- **/etc/supervisor/supervisord.conf**
+**/etc/supervisor/supervisord.conf**
+
 ```text
 # change 2 last rows
 [include]
 files = conf.d/*.ini
 ```
+
 #### Worker
 - **/etc/supervisor/conf.d/topccs-wk.ini**
+
 ```text
 [program:topccs-wk]
 command         = /usr/bin/celery -A cworker worker -E -l INFO --autoscale=8,4
@@ -114,8 +118,10 @@ startretries    = 5
 stdout_logfile  = /var/log/supervisor/topccs-wk.out.log
 stderr_logfile  = /var/log/supervisor/topccs-wk.err.log
 ```
+
 #### API
 - **/etc/supervisor/conf.d/topccs-api.ini**
+
 ```text
 [program:topccs-api]
 command         = /usr/bin/gunicorn -w 9 -b 127.0.0.1:3007 apis:app --access-logfile - --max-requests 5000 --max-requests-jitter 10
@@ -126,6 +132,7 @@ startretries    = 5
 stdout_logfile  = /var/log/supervisor/topccs-api.out.log
 stderr_logfile  = /var/log/supervisor/topccs-api.err.log
 ```
+
 ### Nginx (optional)
 ```text
 server {
@@ -148,7 +155,7 @@ server {
 }
 ```
 
-## Services
+## Control process
 With normal user
 ```bash
 # Start supervisor
