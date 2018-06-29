@@ -20,7 +20,7 @@ def send_campaign():
         if camp.cp_check_unique_id(campaign_id=int(payload['campaignid'])):
             camp.cp_insert_one(json=payload)
         """ Insert contacts in a campaign """
-        valid_contacts = camp.cts_get_valid_list(contacts=payload['contact'])
+        valid_contacts = camp.cts_validate(contacts=payload['contact'])
         camp.cts_insert_many(contacts=valid_contacts, campaign_id=int(payload['campaignid']))
     except (CampaignError, DBError) as e:
         return jsonify(dict(campaignid=payload['campaignid'], code=payload['code'], status=0, error_msg=e.msg)), 400
@@ -42,3 +42,23 @@ def close_campaign():
         return jsonify(dict(campaignid=campaign_id, code=code, status=0, error_msg=e.msg)), 400
     else:
         return jsonify(dict(campaignid=campaign_id, code=code, status=1))
+
+
+@app.route('/api/getCampaign/<int:campaignid>', methods=['GET'])
+def get_campaign(campaignid):
+    try:
+        campaign = camp.cp_get_one(campaign_id=campaignid)
+    except (CampaignError, DBError) as e:
+        return jsonify(dict(error_msg=e.msg)), 400
+    else:
+        return jsonify(campaign)
+
+
+@app.route('/api/getCdr/<int:campaignid>/<int:contactid>', methods=['GET'])
+def get_cdr(campaignid, contactid):
+    try:
+        cdr = camp.cdr_select_one(campaign_id=campaignid, contact_id=contactid)
+    except (CampaignError, DBError) as e:
+        return jsonify(dict(error_msg=e.msg)), 400
+    else:
+        return jsonify(cdr)

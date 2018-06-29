@@ -36,4 +36,3 @@ class MySQLConnector(object):
         if not self.__cnx.is_connected():
             self._connect()
         return self.__cnx.cursor(**kwargs)
-        # except OperationalError:

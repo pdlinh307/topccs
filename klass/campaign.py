@@ -59,7 +59,7 @@ class Campaign(object):
         except ValueError:
             raise CampaignError('CP_DATETIME_FORMAT')
 
-        cursor = db.get_cursor(dictionary=True)
+        cursor = db.get_cursor()
         try:
             cursor.execute("INSERT INTO `campaigns`(`campaign_id`, `type_id`, `time_start`, `time_end`)"
                            "VALUES (%s, %s, %s, %s)",
@@ -75,20 +75,34 @@ class Campaign(object):
         row = self.cp_select_one(campaign_id)
         if row is None:
             raise CampaignError('CP_ID_NOT_EXISTED')
-        cursor = db.get_cursor(dictionary=True)
+        cursor = db.get_cursor()
         try:
-            cursor.execute("UPDATE `campaigns` SET `status_closed` = TRUE WHERE `campaign_id` = %s", (campaign_id,))
+            cursor.execute("UPDATE `campaigns` SET `status_closed` = TRUE "
+                           "WHERE `campaign_id` = %s", (campaign_id,))
             return cursor.rowcount
         except:
             raise DBError('DB_ERROR')
         finally:
             cursor.close()
 
-    def cts_get_valid_list(self, contacts):
+    def cts_validate(self, contacts):
         valid_contacts = list(filter(lambda c: self.__config['cts_required_field'] in c, contacts))
         if len(valid_contacts) == 0:
             raise CampaignError('CTS_EMPTY')
         return valid_contacts
+
+    @staticmethod
+    def cts_insert_many(contacts, campaign_id):
+        cursor = db.get_cursor()
+        contacts = list(map(lambda c: (campaign_id, int(c['id']), c['phonenumber'], c.get('linkedit', None)), contacts))
+        try:
+            cursor.executemany("INSERT INTO `cdr`(`campaign_id`, `contact_id`, `phone_number`, `linkedit`)"
+                               "VALUES (%s, %s, %s, %s)", contacts)
+            return cursor.rowcount
+        except:
+            raise DBError('DB_ERROR')
+        finally:
+            cursor.close()
 
     @staticmethod
     def cdr_select_one(campaign_id, contact_id):
@@ -103,12 +117,14 @@ class Campaign(object):
             cursor.close()
 
     @staticmethod
-    def cts_insert_many(contacts, campaign_id):
-        cursor = db.get_cursor(dictionary=True)
-        contacts = list(map(lambda c: (campaign_id, int(c['id']), c['phonenumber'], c.get('linkedit', None)), contacts))
+    def cdr_update_one(campaign_id, contact_id, data):
+        if type(data) is not dict or len(data) == 0:
+            raise CampaignError('CP_INVALID_PARAM')
+        args = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), data.keys())))
+        sql = "UPDATE `cdr` SET {0} WHERE `campaign_id`={1} AND `contact_id`={2}".format(args, campaign_id, contact_id)
+        cursor = db.get_cursor()
         try:
-            cursor.executemany("INSERT INTO `cdr`(`campaign_id`, `contact_id`, `phone_number`, `linkedit`)"
-                               "VALUES (%s, %s, %s, %s)", contacts)
+            cursor.execute(sql, data)
             return cursor.rowcount
         except:
             raise DBError('DB_ERROR')

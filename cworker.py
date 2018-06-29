@@ -3,7 +3,7 @@ from celery import Celery
 from celery.utils.log import get_task_logger
 from klass import conf
 from klass.campaign import Campaign
-from klass.exceptions import DBError
+from klass.exceptions import DBError, CampaignError
 
 celery_app = Celery('cworker')
 celery_app.conf.update(
@@ -24,8 +24,8 @@ def finish_campaign(campaign_id):
         campaign = Campaign.cp_select_one(campaign_id=campaign_id)
         # Todo: check lai doan status nay cho chinh xac
         campaign_status = 'completed' if campaign['status_completed'] else 'cancel'
-    except DBError as err:
-        logger.error("UPDATE:campaignid={0}|{1}".format(campaign_id, err.msg))
+    except DBError as e:
+        logger.error("UPDATE:campaignid={0}|{1}".format(campaign_id, e.msg))
     else:
         payload = dict(
             campaignid=campaign_id,
@@ -47,8 +47,8 @@ def update_campaign(campaign_id, contact_id):
     crm_callback = conf_callback['update_campaign']
     try:
         cdr = Campaign.cdr_select_one(campaign_id=campaign_id, contact_id=contact_id)
-    except DBError as err:
-        logger.error("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, err.msg))
+    except DBError as e:
+        logger.error("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
     else:
         payload = dict(
             campaignid=campaign_id,
@@ -70,3 +70,20 @@ def update_campaign(campaign_id, contact_id):
             logger.info("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, response.status_code))
         except:
             logger.warning("UPDATE:campaignid={0},contactid={1}|failed".format(campaign_id, contact_id))
+
+
+@celery_app.task()
+def update_cdr(campaign_id, contact_id, event):
+    # todo: mapping keys between event and data
+    # mapping_keys = dict(
+    #     StartTime='time_start',
+    #     StartEnd='time_end',
+    #     StartAnswer='time_answer',
+    #     Duration='duration',
+    #     Disposition='disposition',
+    # )
+    try:
+        result = Campaign.cdr_update_one(campaign_id, contact_id, event)
+        logger.info("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, bool(result)))
+    except (CampaignError, DBError) as e:
+        logger.info("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
