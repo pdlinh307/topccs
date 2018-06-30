@@ -57,12 +57,12 @@ sudo chown -R nonroot:nonroot /var/log/supervisor
 
 ```ini
 [client]
-host=<mysql_server>
-port=3306
-user=<db_user>
-password=<db_password>
-database=topccs
-autocommit=True
+host        = <mysql_server>
+port        = 3306
+user        = <db_user>
+password    = <db_password>
+database    = topccs
+autocommit  = True
 ```
 
 **config/app.conf**
