@@ -26,6 +26,7 @@ Replace `db_user` with username that created in previous step.
 ```bash
 mysql -u db_user -p topccs < topccs.sql
 ```
+
 ### Python
 #### Install pip
 Download [get-pip.py](https://bootstrap.pypa.io/get-pip.py).
@@ -52,7 +53,7 @@ sudo chown -R nonroot:nonroot /var/log/supervisor
 
 ## Configurations
 ### Project's config
-- **config/mysql.conf**
+**config/mysql.conf**
 
 ```ini
 [client]
@@ -64,14 +65,14 @@ database=topccs
 autocommit=True
 ```
 
-- **config/app.conf**
+**config/app.conf**
 
 ```ini
 [ami]
-host        = <hostname_or_ipaddress>
+host        = <hostname_or_ipaddress_voip_server>
 port        = 5038
-user        = <username>
-secret      = <secret_for_username>
+user        = <ami_user>
+secret      = <ami_secret>
 encoding    = utf8
 
 [trunk]
@@ -131,6 +132,48 @@ autorestart     = true
 startretries    = 5
 stdout_logfile  = /var/log/supervisor/topccs-api.out.log
 stderr_logfile  = /var/log/supervisor/topccs-api.err.log
+```
+
+### Asterisk
+**/etc/asterisk/asterisk.conf**
+
+```ini
+[options]
+systemname  = topinative
+```
+
+**/etc/asterisk/cdr_manager.conf**
+
+```ini
+[general]
+enable          = yes
+
+[mappings]
+linkedid        = Linkedid
+did             = Did
+recordingfile   = RecordingFile
+```
+
+**/etc/asterisk/manager.conf**
+
+```ini
+[general]
+enable              = yes
+timestampevents     = yes
+allowmultiplelogin  = no
+```
+
+**/etc/asterisk/manager_custom.conf**
+
+```ini
+[<ami_user>]
+secret          = <ami_secret>
+deny            = 0.0.0.0/0.0.0.0
+permit          = 127.0.0.1/255.255.255.255
+read            = call,cdr,system
+write           = all
+writetimeout    = 5000
+displayconnects = yes
 ```
 
 ### Nginx (optional)
