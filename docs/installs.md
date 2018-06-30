@@ -14,10 +14,10 @@ If you are CRM developer, please read [this document](apispecs.md).
 ## Setting up environments
 ### Database 
 #### Create database and user 
-Replace `db_name`, `hostname` and `p4ssw0rd` with your username, hostname and password respectively. 
+Replace `db_name`, `hostname` and `db_password` with your username, hostname and password respectively. 
 ```sql
 CREATE DATABASE IF NOT EXISTS `topccs` DEFAULT CHARACTER SET utf8;
-CREATE USER 'db_user'@'hostname' IDENTIFIED BY 'p4ssw0rd';
+CREATE USER 'db_user'@'hostname' IDENTIFIED BY 'db_password';
 GRANT ALL ON topccs.* TO 'db_user'@'hostname';
 FLUSH PRIVILEGES;
 ```
@@ -57,10 +57,10 @@ sudo chown -R nonroot:nonroot /var/log/supervisor
 
 ```ini
 [client]
-host=<hostname_or_ipaddress>
+host=<mysql_server>
 port=3306
-user=<username_for_mysql>
-password=<password_for_username>
+user=<db_user>
+password=<db_password>
 database=topccs
 autocommit=True
 ```
@@ -69,7 +69,7 @@ autocommit=True
 
 ```ini
 [ami]
-host        = <hostname_or_ipaddress_voip_server>
+host        = <voip_server>
 port        = 5038
 user        = <ami_user>
 secret      = <ami_secret>
@@ -146,19 +146,19 @@ systemname  = topinative
 
 ```ini
 [general]
-enable          = yes
+enabled         = yes
 
 [mappings]
-linkedid        = Linkedid
-did             = Did
-recordingfile   = RecordingFile
+linkedid        => Linkedid
+did             => Did
+recordingfile   => RecordingFile
 ```
 
 **/etc/asterisk/manager.conf**
 
 ```ini
 [general]
-enable              = yes
+enabled             = yes
 timestampevents     = yes
 allowmultiplelogin  = no
 ```
@@ -170,7 +170,7 @@ allowmultiplelogin  = no
 secret          = <ami_secret>
 deny            = 0.0.0.0/0.0.0.0
 permit          = 127.0.0.1/255.255.255.255
-read            = call,cdr,system
+read            = system,call,command,cdr,originate
 write           = all
 writetimeout    = 5000
 displayconnects = yes
