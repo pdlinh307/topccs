@@ -2,12 +2,14 @@
 from datetime import datetime
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
+from klass.asterisk import AsteriskAMI
 from klass.exceptions import CampaignError, DBError
 from klass import conf
 
 """ Initial instances """
 app = Flask(__name__)
 camp = Campaign(config=conf.section(name='api'))
+ami = AsteriskAMI(config=conf.section(name='ami'))
 # Todo: basic authentication
 # Todo: scheduler
 

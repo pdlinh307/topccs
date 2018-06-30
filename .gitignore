@@ -4,3 +4,4 @@ topicode/
 *.pyc
 test*
 __pycache__/
+.vscode/
