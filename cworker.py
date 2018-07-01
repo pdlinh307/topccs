@@ -1,4 +1,7 @@
 import requests
+import sched
+import datetime
+import time
 from celery import Celery
 from celery.utils.log import get_task_logger
 from klass.campaign import Campaign
@@ -13,6 +16,7 @@ celery_app.config_from_object(dict(
     timezone='Asia/Ho_Chi_Minh')
 )
 logger = get_task_logger(__name__)
+scheduler = sched.scheduler(timefunc=datetime.datetime, delayfunc=time.sleep)
 conf_callback = conf.section(name='callback')
 
 
@@ -45,7 +49,7 @@ def finish_campaign(campaign_id):
 def update_campaign(campaign_id, contact_id):
     crm_callback = conf_callback['update_campaign']
     try:
-        cdr = Campaign.cdr_select_one(campaign_id=campaign_id, contact_id=contact_id)
+        cdr = Campaign.cts_select_one(campaign_id=campaign_id, contact_id=contact_id)
     except DBError as e:
         logger.error("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
     else:
@@ -73,16 +77,26 @@ def update_campaign(campaign_id, contact_id):
 
 @celery_app.task()
 def update_cdr(campaign_id, contact_id, event):
-    # todo: mapping keys between event and data
-    # mapping_keys = dict(
-    #     StartTime='time_start',
-    #     StartEnd='time_end',
-    #     StartAnswer='time_answer',
-    #     Duration='duration',
-    #     Disposition='disposition',
-    # )
     try:
-        result = Campaign.cdr_update_one(campaign_id, contact_id, event)
+        result = Campaign.cts_update_one(campaign_id, contact_id, event)
         logger.info("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, bool(result)))
     except (CampaignError, DBError) as e:
         logger.error("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
+
+
+@celery_app.task()
+def create_schedule(campaign_id):
+    campaign = Campaign.cp_select_one(campaign_id=campaign_id)
+    contacts = Campaign.cts_select_many(filter=dict(campaign_id=campaign_id))
+    for cts in contacts:
+        scheduler.enterabs(campaign['time_start'], abc, cts)
+    logger.info("SCHEDULER:campaignid={0}".format(campaign_id))
+
+
+@celery_app.task()
+def cancel_schedule(campaign_id):
+    pass
+
+def abc(data):
+    logger.info(str(data))
+

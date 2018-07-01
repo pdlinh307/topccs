@@ -64,11 +64,14 @@ CREATE TABLE `cdr` (
   `contact_id` int(11) NOT NULL,
   `phone_number` varchar(16) NOT NULL DEFAULT '',
   `linkedit` varchar(128) DEFAULT NULL,
-  `agent` varchar(45) DEFAULT NULL,
-  `station_id` varchar(45) DEFAULT NULL,
+  `sched_nextcall` datetime DEFAULT NULL,
+  `sched_isset` tinyint(1) NOT NULL DEFAULT 0,
+  `sched_count` int(11) DEFAULT 0,
   `time_start` datetime DEFAULT NULL,
   `time_answer` datetime DEFAULT NULL,
   `time_end` datetime DEFAULT NULL,
+  `agent` varchar(45) DEFAULT NULL,
+  `station_id` varchar(45) DEFAULT NULL,
   `duration` int(11) DEFAULT NULL,
   `billsec` int(11) DEFAULT NULL,
   `disposition` varchar(45) DEFAULT NULL,
@@ -111,6 +114,35 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`topccs`@`%`*/ /*!50003 trigger trigger_sched_update
+  before UPDATE
+  on cdr
+  for each row
+  BEGIN
+    IF OLD.sched_nextcall IS NULL THEN
+      IF NEW.sched_nextcall IS NOT NULL THEN
+        SET NEW.sched_count = OLD.sched_count + 1, NEW.sched_isset = TRUE ;
+      end if;
+    ELSE
+      IF NEW.sched_nextcall > OLD.sched_nextcall THEN
+        SET NEW.sched_count = OLD.sched_count + 1, NEW.sched_isset = TRUE ;
+      end if;
+    END IF;
+  END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
 /*!50003 CREATE*/ /*!50017 DEFINER=`topccs`@`%`*/ /*!50003 TRIGGER `trigger_increase_contact_success`
   AFTER UPDATE
   ON `cdr`
@@ -139,4 +171,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-06-28 17:00:33
+-- Dump completed on 2018-07-02  1:21:40

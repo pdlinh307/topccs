@@ -93,7 +93,7 @@ class Campaign(metaclass=Singleton):
             cursor.close()
 
     @staticmethod
-    def cdr_select_one(campaign_id, contact_id):
+    def cts_select_one(campaign_id, contact_id):
         cursor = db.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM `cdr` WHERE `campaign_id` = %s AND `contact_id` = %s LIMIT 1",
@@ -105,7 +105,22 @@ class Campaign(metaclass=Singleton):
             cursor.close()
 
     @staticmethod
-    def cdr_update_one(campaign_id, contact_id, data):
+    def cts_select_many(filter):
+        if type(filter) is not dict or len(filter) == 0:
+            raise CampaignError('CP_INVALID_PARAM')
+        args = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), filter.keys())))
+        cursor = db.cursor(dictionary=True)
+        sql = "SELECT * FROM `cdr` WHERE {0}".format(args)
+        try:
+            cursor.execute(sql, filter)
+            return cursor.fetchall()
+        except:
+            raise DBError('DB_ERROR')
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def cts_update_one(campaign_id, contact_id, data):
         if type(data) is not dict or len(data) == 0:
             raise CampaignError('CP_INVALID_PARAM')
         args = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), data.keys())))

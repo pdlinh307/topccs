@@ -2,55 +2,65 @@
 from datetime import datetime
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
-from klass.asterisk import AsteriskAMI
+# from klass.asterisk import AsteriskAMI
 from klass.exceptions import CampaignError, DBError
 from klass import conf
+import cworker
+
 
 """ Initial instances """
 app = Flask(__name__)
 camp = Campaign(config=conf.section(name='api'))
-ami = AsteriskAMI(config=conf.section(name='ami'))
+# ami = AsteriskAMI(config=conf.section(name='ami'))
 # Todo: basic authentication
 # Todo: scheduler
 
 
 @app.route('/api/sendCampaign', methods=['POST'])
 def send_campaign():
+    """
+    Create a new campaign.
+    """
     payload = request.json
     try:
         """ Insert campaign """
         camp.cp_check_payload(json=payload)
         if camp.cp_check_unique_id(campaign_id=int(payload['campaignid'])):
             camp.cp_insert_one(json=payload)
+
         """ Insert contacts in a campaign """
         valid_contacts = camp.cts_validate(contacts=payload['contact'])
         camp.cts_insert_many(contacts=valid_contacts, campaign_id=int(payload['campaignid']))
+
+        """ Create scheduler """
+        cworker.create_schedule.delay(campaign_id=int(payload['campaignid']))
     except (CampaignError, DBError) as e:
         return jsonify(dict(campaignid=payload['campaignid'], code=payload['code'], status=0, error_msg=e.msg)), 400
     else:
         return jsonify(dict(campaignid=payload['campaignid'], code=payload['code'], status=1))
 
 
-@app.route('/api/closeCampaign', methods=['GET'])
-def close_campaign():
-    args = request.args
-    campaign_id = args.get('campaignid', None)
-    code = args.get('code', None)
+@app.route('/api/closeCampaign/<int:campaign_id>', methods=['GET'])
+def close_campaign(campaign_id):
+    """
+    Cancel a campaign.
+    """
     try:
-        if campaign_id is None:
-            raise CampaignError('CP_MISS_PARAM')
-        campaign_id = int(campaign_id)
+        """ Close campaign """
         camp.cp_close_one(campaign_id=campaign_id)
+
+        """ Cancel scheduler """
+        cworker.cancel_schedule.delay(campaign_id=campaign_id)
     except (CampaignError, DBError) as e:
-        return jsonify(dict(campaignid=campaign_id, code=code, status=0, error_msg=e.msg)), 400
+        return jsonify(dict(campaignid=campaign_id, status=0, error_msg=e.msg)), 400
     else:
-        return jsonify(dict(campaignid=campaign_id, code=code, status=1))
+        return jsonify(dict(campaignid=campaign_id, status=1))
 
 
-@app.route('/api/getCampaign/<int:campaignid>', methods=['GET'])
-def get_campaign(campaignid):
+@app.route('/api/getCampaign/<int:campaign_id>', methods=['GET'])
+def get_campaign(campaign_id):
     try:
-        campaign = camp.cp_select_one(campaign_id=campaignid)
+        campaign = camp.cp_select_one(campaign_id=campaign_id)
     except (CampaignError, DBError) as e:
         return jsonify(dict(error_msg=e.msg)), 400
     else:
@@ -60,10 +70,10 @@ def get_campaign(campaignid):
         return jsonify(campaign)
 
 
-@app.route('/api/getCdr/<int:campaignid>/<int:contactid>', methods=['GET'])
-def get_cdr(campaignid, contactid):
+@app.route('/api/getCdr/<int:campaign_id>/<int:contactid>', methods=['GET'])
+def get_cdr(campaign_id, contactid):
     try:
-        cdr = camp.cdr_select_one(campaign_id=campaignid, contact_id=contactid)
+        cdr = camp.cts_select_one(campaign_id=campaign_id, contact_id=contactid)
     except (CampaignError, DBError) as e:
         return jsonify(dict(error_msg=e.msg)), 400
     else:
