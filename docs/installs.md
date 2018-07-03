@@ -7,7 +7,7 @@ If you are CRM developer, please read [this document](apispecs.md).
 * *CentOS 7*
 * *MySQL 8.0 (recommended) or MariaDB (10.3)*
 * *Python >= 3.5 (3.6.x recommended)*
-* *Redis >= 3.0*
+* *Redis >= 3.2*
 * *Asterisk 13*
 * *Nginx (optional)*
 
@@ -31,13 +31,13 @@ mysql -u db_user -p topccs < topccs.sql
 #### Install pip
 Download [get-pip.py](https://bootstrap.pypa.io/get-pip.py).
 ```bash
-sudo python3 get-pip.py
+sudo python3.6 get-pip.py
 ``` 
 #### Install required libs
 Download project.
 ```bash
 cd /path/to/project
-sudo pip3 install -r requirements.txt
+sudo pip3.6 install -r requirements.txt
 ```
 #### Install supervisor
 Replace `nonroot` with normal user.
@@ -46,9 +46,9 @@ sudo pip install supervisor
 sudo mkdir /etc/supervisor
 sudo mkdir /etc/supervisor/conf.d
 sudo mkdir /var/log/supervisor
-sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 sudo chown -R nonroot:nonroot /etc/supervisor
 sudo chown -R nonroot:nonroot /var/log/supervisor
+sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 ```
 
 ## Configurations
@@ -76,9 +76,11 @@ secret      = <ami_secret>
 encoding    = utf8
 
 [trunk]
-context     = SIP/mkt
+trunk       = SIP/mkt
+context     = from-internal
 queue       = 8000
 timeout     = 30
+priority    = 1
 
 [scheduler]
 retry       = 3
@@ -160,7 +162,7 @@ recordingfile   => RecordingFile
 [general]
 enabled             = yes
 timestampevents     = yes
-allowmultiplelogin  = no
+allowmultiplelogin  = yes
 ```
 
 **/etc/asterisk/manager_custom.conf**

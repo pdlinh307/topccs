@@ -1,7 +1,7 @@
 import requests
-import sched
-import datetime
-import time
+from datetime import datetime, timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.redis import RedisJobStore
 from celery import Celery
 from celery.utils.log import get_task_logger
 from klass.campaign import Campaign
@@ -16,7 +16,8 @@ celery_app.config_from_object(dict(
     timezone='Asia/Ho_Chi_Minh')
 )
 logger = get_task_logger(__name__)
-scheduler = sched.scheduler(timefunc=datetime.datetime, delayfunc=time.sleep)
+scheduler = BackgroundScheduler()
+scheduler.start()
 conf_callback = conf.section(name='callback')
 
 
@@ -41,7 +42,7 @@ def finish_campaign(campaign_id):
         try:
             response = requests.post(url=crm_callback, json=payload, timeout=int(conf_callback['timeout']))
             logger.info("FINISH:campaignid={0}|{1}".format(campaign_id, response.status_code))
-        except:
+        except Exception:
             logger.error("FINISH:campaignid={0}|failed".format(campaign_id))
 
 
@@ -87,16 +88,22 @@ def update_cdr(campaign_id, contact_id, event):
 @celery_app.task()
 def create_schedule(campaign_id):
     campaign = Campaign.cp_select_one(campaign_id=campaign_id)
-    contacts = Campaign.cts_select_many(filter=dict(campaign_id=campaign_id))
-    for cts in contacts:
-        scheduler.enterabs(campaign['time_start'], abc, cts)
-    logger.info("SCHEDULER:campaignid={0}".format(campaign_id))
+    if campaign is not None:
+        scheduler.add_job(func=sched_campaign, trigger='date', run_date=campaign['time_start'], args=[campaign_id])
+        return True
+    else:
+        return False
 
 
 @celery_app.task()
-def cancel_schedule(campaign_id):
+def cancel_schedule():
+    scheduler.remove_job()
+
+
+def sched_campaign(campaign_id):
+    # scheduler.add_job(sched_send_originate, 'date')
+    logger.info("SCHEDULE time: campaign=%s at %s" % (campaign_id, datetime.now()))
+
+
+def sched_send_originate():
     pass
-
-def abc(data):
-    logger.info(str(data))
-

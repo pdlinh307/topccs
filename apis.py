@@ -2,7 +2,6 @@
 from datetime import datetime
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
-# from klass.asterisk import AsteriskAMI
 from klass.exceptions import CampaignError, DBError
 from klass import conf
 import cworker
@@ -11,7 +10,6 @@ import cworker
 """ Initial instances """
 app = Flask(__name__)
 camp = Campaign(config=conf.section(name='api'))
-# ami = AsteriskAMI(config=conf.section(name='ami'))
 # Todo: basic authentication
 # Todo: scheduler
 
@@ -70,10 +68,10 @@ def get_campaign(campaign_id):
         return jsonify(campaign)
 
 
-@app.route('/api/getCdr/<int:campaign_id>/<int:contactid>', methods=['GET'])
-def get_cdr(campaign_id, contactid):
+@app.route('/api/getCdr/<int:campaign_id>/<int:contact_id>', methods=['GET'])
+def get_cdr(campaign_id, contact_id):
     try:
-        cdr = camp.cts_select_one(campaign_id=campaign_id, contact_id=contactid)
+        cdr = camp.cts_select_one(campaign_id=campaign_id, contact_id=contact_id)
     except (CampaignError, DBError) as e:
         return jsonify(dict(error_msg=e.msg)), 400
     else:
