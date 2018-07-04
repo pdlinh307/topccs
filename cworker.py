@@ -1,7 +1,4 @@
 import requests
-from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.jobstores.redis import RedisJobStore
 from celery import Celery
 from celery.utils.log import get_task_logger
 from klass.campaign import Campaign
@@ -16,8 +13,6 @@ celery_app.config_from_object(dict(
     timezone='Asia/Ho_Chi_Minh')
 )
 logger = get_task_logger(__name__)
-scheduler = BackgroundScheduler()
-scheduler.start()
 conf_callback = conf.section(name='callback')
 
 
@@ -83,27 +78,3 @@ def update_cdr(campaign_id, contact_id, event):
         logger.info("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, bool(result)))
     except (CampaignError, DBError) as e:
         logger.error("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
-
-
-@celery_app.task()
-def create_schedule(campaign_id):
-    campaign = Campaign.cp_select_one(campaign_id=campaign_id)
-    if campaign is not None:
-        scheduler.add_job(func=sched_campaign, trigger='date', run_date=campaign['time_start'], args=[campaign_id])
-        return True
-    else:
-        return False
-
-
-@celery_app.task()
-def cancel_schedule():
-    scheduler.remove_job()
-
-
-def sched_campaign(campaign_id):
-    # scheduler.add_job(sched_send_originate, 'date')
-    logger.info("SCHEDULE time: campaign=%s at %s" % (campaign_id, datetime.now()))
-
-
-def sched_send_originate():
-    pass

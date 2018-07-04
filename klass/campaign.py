@@ -73,6 +73,21 @@ class Campaign(metaclass=Singleton):
         finally:
             cursor.close()
 
+    @staticmethod
+    def cp_update_one(campaign_id, data):
+        if type(data) is not dict or len(data) == 0:
+            raise CampaignError('CP_INVALID_PARAM')
+        args = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), data.keys())))
+        sql = "UPDATE `campaigns` SET {0} WHERE `campaign_id`={1}".format(args, campaign_id)
+        cursor = db.cursor()
+        try:
+            cursor.execute(sql, data)
+            return cursor.rowcount
+        except:
+            raise DBError('DB_ERROR')
+        finally:
+            cursor.close()
+
     def cts_validate(self, contacts):
         valid_contacts = list(filter(lambda c: self.__config['cts_required_field'] in c, contacts))
         if len(valid_contacts) == 0:

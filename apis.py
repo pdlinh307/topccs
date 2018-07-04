@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+import asyncio
+# import pprint
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
 from klass.exceptions import CampaignError, DBError
-from klass import conf
-import cworker
+from klass import conf, scheduler
 
 
 """ Initial instances """
@@ -31,7 +32,8 @@ def send_campaign():
         camp.cts_insert_many(contacts=valid_contacts, campaign_id=int(payload['campaignid']))
 
         """ Create scheduler """
-        cworker.create_schedule.delay(campaign_id=int(payload['campaignid']))
+        campaign = camp.cp_select_one(campaign_id=int(payload['campaignid']))
+        scheduler.add_job(_create_job, 'date', run_date=campaign['time_start'], args=[campaign['campaign_id']])
     except (CampaignError, DBError) as e:
         return jsonify(dict(campaignid=payload['campaignid'], code=payload['code'], status=0, error_msg=e.msg)), 400
     else:
@@ -48,7 +50,7 @@ def close_campaign(campaign_id):
         camp.cp_close_one(campaign_id=campaign_id)
 
         """ Cancel scheduler """
-        cworker.cancel_schedule.delay(campaign_id=campaign_id)
+        # cworker.cancel_schedule.delay(campaign_id=campaign_id)
     except (CampaignError, DBError) as e:
         return jsonify(dict(campaignid=campaign_id, status=0, error_msg=e.msg)), 400
     else:
@@ -79,3 +81,18 @@ def get_cdr(campaign_id, contact_id):
             if isinstance(v, datetime):
                 cdr[k] = v.strftime(conf.section(name='api')['datetime_format'])
         return jsonify(cdr)
+
+
+def _create_job(campaign_id):
+    camp.cp_update_one(campaign_id, dict(status_scheduled=True))
+    contacts = camp.cts_select_many(filter=dict(campaign_id=campaign_id))
+    now = datetime.now()
+    for cts in contacts:
+        scheduler.add_job(send_originate, 'date', run_date=now + timedelta(seconds=5),
+                          args=[cts['phone_number']], id='{0}.{1}'.format(campaign_id, cts['phone_number']))
+        now = now + timedelta(seconds=20)
+    return True
+
+
+def send_originate(phone):
+    exec(open("originate.py").read())
