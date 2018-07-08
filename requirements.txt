@@ -3,6 +3,6 @@ flask
 gunicorn
 requests
 mysql-connector-python
-panoramisk
+asterisk-ami
 celery
 redis
