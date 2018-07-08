@@ -69,13 +69,13 @@ autocommit  = True
 
 ```ini
 [ami]
-host        = <voip_server>
-port        = 5038
-user        = <ami_user>
-secret      = <ami_secret>
-encoding    = utf8
+host            = <voip_server>
+port            = 5038
+user            = <ami_user>
+secret          = <ami_secret>
+datetime_format = %%Y-%%m-%%d %%H:%%M:%%S
 
-[trunk]
+[callservice]
 trunk       = SIP/mkt
 context     = from-internal
 queue       = 8000
@@ -85,12 +85,12 @@ priority    = 1
 [scheduler]
 retry       = 3
 interval    = 3600
-rate_limit  = 2m
+rate_limit  = 2/m
 
 [api]
-datetime_format     = %%Y-%%m-%%d %%H:%%M:%%S
-cp_required_fields  = campaignid,typeid,contact,code,starttime,endtime
-cts_required_field  = phonenumber
+datetime_format             = %%Y-%%m-%%d %%H:%%M:%%S
+required_fields_campaign    = campaignid,typeid,contact,starttime,endtime
+required_field_contacts     = phonenumber
 
 [callback]
 finish_campaign = http://crm.native.vn/api/FinishCampaign
@@ -172,7 +172,7 @@ allowmultiplelogin  = yes
 secret          = <ami_secret>
 deny            = 0.0.0.0/0.0.0.0
 permit          = 127.0.0.1/255.255.255.255
-read            = system,call,command,cdr,originate
+read            = all
 write           = all
 writetimeout    = 5000
 displayconnects = yes

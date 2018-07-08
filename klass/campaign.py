@@ -11,140 +11,85 @@ class Campaign(metaclass=Singleton):
     def __init__(self, config):
         self.__config = config
 
-    def cp_check_payload(self, json):
-        required_fields = self.__config['cp_required_fields'].split(',')
-        if json is None:
-            raise CampaignError('CP_INVALID_PAYLOAD')
+    def insert(self, data):
+        # Check payload
+        required_fields = self.__config['required_fields_campaign'].split(',')
+        if data is None:
+            raise CampaignError('PAYLOAD_EMPTY')
         for f in required_fields:
-            if f not in json:
-                raise CampaignError('CP_MISS_PARAM')
-        return True
+            if f not in data:
+                raise CampaignError('PARAM_MISS')
 
-    def cp_check_unique_id(self, campaign_id):
-        row = self.cp_select_one(campaign_id)
-        if row is not None:
-            raise CampaignError('CP_ID_EXISTED')
-        return True
+        cid = int(data['campaignid'])
+        tid = int(data['typeid'])
 
-    @staticmethod
-    def cp_select_one(campaign_id):
-        cursor = db.cursor(dictionary=True)
+        # Check unique id
+        if self.select_one(table='cdr', where=dict(campaign_id=cid)):
+            raise CampaignError('ID_EXISTED')
+
+        # Parse datetime
         try:
-            cursor.execute("SELECT * FROM `campaigns` WHERE `campaign_id` = %s LIMIT 1", (campaign_id,))
-            return cursor.fetchone()
-        except:
-            raise DBError('DB_ERROR')
-        finally:
-            cursor.close()
-
-    def cp_insert_one(self, json):
-        # todo: create schedule job
-        try:
-            date_format = self.__config['datetime_format']
-            time_start = datetime.strptime(json['starttime'], date_format)
-            time_end = datetime.strptime(json['endtime'], date_format)
+            fmt = self.__config['datetime_format']
+            time_start = datetime.strptime(data['starttime'], fmt)
+            time_end = datetime.strptime(data['endtime'], fmt)
             if time_end < time_start or time_end < datetime.now():
-                raise CampaignError('CP_INVALID_PARAM')
+                raise CampaignError('PARAM_INVALID')
         except ValueError:
-            raise CampaignError('CP_DATETIME_FORMAT')
+            raise CampaignError('DATETIME_FORMAT')
 
+        # Insert
         cursor = db.cursor()
         try:
             cursor.execute("INSERT INTO `campaigns`(`campaign_id`, `type_id`, `time_start`, `time_end`)"
-                           "VALUES (%s, %s, %s, %s)",
-                           (int(json['campaignid']), int(json['typeid']), time_start, time_end))
-            return cursor.rowcount
+                           "VALUES (%s, %s, %s, %s)", (cid, tid, time_start, time_end))
+            if cursor.rowcount == 1:
+                cts = list(filter(lambda c: self.__config['required_field_contacts'] in c, data['contact']))
+                cts = list(map(lambda c: (cid, int(c['id']), c['phonenumber'], c.get('linkedit', None)), cts))
+                cursor.executemany("INSERT INTO `cdr`(`campaign_id`, `contact_id`, `phone_number`, `linkedit`)"
+                                   "VALUES (%s, %s, %s, %s)", cts)
+                return cursor.rowcount
         except:
-            raise DBError('DB_ERROR')
-        finally:
-            cursor.close()
-
-    def cp_close_one(self, campaign_id):
-        # Todo: cancel all schedule task of this campaign
-        row = self.cp_select_one(campaign_id)
-        if row is None:
-            raise CampaignError('CP_ID_NOT_EXISTED')
-        cursor = db.cursor()
-        try:
-            cursor.execute("UPDATE `campaigns` SET `status_closed` = TRUE "
-                           "WHERE `campaign_id` = %s", (campaign_id,))
-            return cursor.rowcount
-        except Exception:
-            raise DBError('DB_ERROR')
+            raise DBError('ERROR')
         finally:
             cursor.close()
 
     @staticmethod
-    def cp_update(data, where):
-        keys = list(filter(lambda u: u not in where, data.keys()))
-        sets = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), keys)))
-        cods = ' AND '.join(list(map(lambda w: "{0} = %({0})s", where)))
-        sql = "UPDATE `campaigns` SET {0} WHERE {1}".format(sets, cods)
-        cursor = db.cursor()
-        try:
-            cursor.execute(sql, data)
-            return cursor.rowcount
-        except:
-            raise DBError('DB_ERROR')
-        finally:
-            cursor.close()
-
-    @staticmethod
-    def cts_select_one(where):
-        # Todo: gop 2 ham one & many thanh 1
+    def select_one(table, where):
+        wherestr = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
+        query = "SELECT * FROM {0} WHERE {1} LIMIT 1".format(table, wherestr)
         cursor = db.cursor(dictionary=True)
-        cods = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
         try:
-            cursor.execute("SELECT * FROM `cdr` WHERE {0} LIMIT 1".format(cods))
+            cursor.execute(query)
             return cursor.fetchone()
         except:
-            raise DBError('DB_ERROR')
+            raise DBError('ERROR')
         finally:
             cursor.close()
 
     @staticmethod
-    def cts_select_many(where):
-        cods = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
+    def select_many(table, where):
+        wherestr = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
+        query = "SELECT * FROM {0} WHERE {1}".format(table, wherestr)
         cursor = db.cursor(dictionary=True)
-        sql = "SELECT * FROM `cdr` WHERE {0}".format(cods)
         try:
-            cursor.execute(sql, filter)
+            cursor.execute(query)
             return cursor.fetchall()
         except:
-            raise DBError('DB_ERROR')
+            raise DBError('ERROR')
         finally:
             cursor.close()
 
     @staticmethod
-    def cts_insert_many(contacts, campaign_id):
-        cursor = db.cursor()
-        contacts = list(map(lambda c: (campaign_id, int(c['id']), c['phonenumber'], c.get('linkedit', None)), contacts))
-        try:
-            cursor.executemany("INSERT INTO `cdr`(`campaign_id`, `contact_id`, `phone_number`, `linkedit`)"
-                               "VALUES (%s, %s, %s, %s)", contacts)
-            return cursor.rowcount
-        except:
-            raise DBError('DB_ERROR')
-        finally:
-            cursor.close()
-
-    @staticmethod
-    def cts_update(data, where):
+    def update(table, where, data):
+        wherestr = ' AND '.join(list(map(lambda w: "{0} = %({0})s", where)))
         keys = list(filter(lambda u: u not in where, data.keys()))
-        sets = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), keys)))
-        cods = ' AND '.join(list(map(lambda w: "{0} = %({0})s", where)))
-        sql = "UPDATE `cdr` SET {0} WHERE {1}".format(sets, cods)
+        setstr = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), keys)))
+        query = "UPDATE {0} SET {1} WHERE {2}".format(table, setstr, wherestr)
         cursor = db.cursor()
         try:
-            cursor.execute(sql, data)
+            cursor.execute(query, data)
             return cursor.rowcount
         except:
-            raise DBError('DB_ERROR')
+            raise DBError('ERROR')
         finally:
             cursor.close()
-
-    def cts_validate(self, contacts):
-        valid_contacts = list(filter(lambda c: self.__config['cts_required_field'] in c, contacts))
-        if len(valid_contacts) == 0:
-            raise CampaignError('CTS_EMPTY')
-        return valid_contacts

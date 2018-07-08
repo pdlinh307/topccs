@@ -23,7 +23,7 @@ class AsteriskAMI(metaclass=Singleton):
 
     def __event_listener_cdr(self, source, event):
         response = event.keys
-        if Campaign.cts_select_many(where=dict(uniqueid=response['UniqueID'])):
+        if Campaign.select_many(table='cdr', where=dict(uniqueid=response['UniqueID'])):
             fmt = self.__config['datetime_format']
             cdr = dict(
                 time_start=datetime.strftime(response['StartTime'], fmt),
@@ -39,4 +39,10 @@ class AsteriskAMI(metaclass=Singleton):
             cdr['record_url'] = response['RecordingFile']
             if response['AnswerTime'] != '':
                 cdr['time_answer'] = datetime.strftime(response['AnswerTime'], fmt)
-            Campaign.cts_update(data=cdr, where=['uniqueid'])
+            Campaign.update(table='cdr', where=['uniqueid'], data=cdr)
+
+    def originate(self, phone):
+        pass
+
+    def queue_status(self, queue):
+        return False

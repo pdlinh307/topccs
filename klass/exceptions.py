@@ -3,14 +3,12 @@
 
 class CampaignError(Exception):
     table_mapping_errors = dict(
-        CP_INVALID_PAYLOAD='Kiểu dữ liệu đầu vào không hợp lệ, kiểm tra "Content-Type" của HTTP Request Header.',
-        CP_INVALID_PARAM="Tham số đầu vào không hợp lệ.",
-        CP_MISS_PARAM='Dữ liệu đầu vào thiếu thông tin bắt buộc.',
-        CP_ID_EXISTED='CampaignId đã tồn tại. Không thể tạo campaign mới trùng với ID của campaign cũ.',
-        CP_ID_NOT_EXISTED="CampaignId không tồn tại.",
-        CP_SINGLETON_CLASS="Hãy sử dụng phương thức get_instance() để khởi tạo đối tượng của lớp singleton.",
-        CP_DATETIME_FORMAT="Sử dụng sai format các trường dữ liệu kiểu DATETIME.",
-        CTS_EMPTY="Danh sách contact cần gọi (hợp lệ) rỗng."
+        PAYLOAD_EMPTY='Kiểu dữ liệu đầu vào không hợp lệ, kiểm tra "Content-Type" của HTTP Request Header.',
+        PARAM_INVALID="Tham số đầu vào không hợp lệ.",
+        PARAM_MISS='Dữ liệu đầu vào thiếu thông tin bắt buộc.',
+        ID_EXISTED='CampaignId đã tồn tại. Không thể tạo campaign mới trùng với ID của campaign cũ.',
+        ID_NOT_EXISTED="CampaignId không tồn tại.",
+        DATETIME_FORMAT="Sử dụng sai format các trường dữ liệu kiểu DATETIME."
     )
 
     def __init__(self, code):
@@ -22,8 +20,8 @@ class CampaignError(Exception):
 
 class DBError(Exception):
     table_mapping_errors = dict(
-        DB_ERROR='Lỗi xảy ra trong quá trình thao tác với cơ sở dữ liệu.',
-        DB_CONNECT_ERROR='Lỗi kết nối tới cơ sở dữ liệu.'
+        ERROR='Lỗi xảy ra trong quá trình thao tác với cơ sở dữ liệu.',
+        CONNECT_ERROR='Lỗi kết nối tới cơ sở dữ liệu.'
     )
 
     def __init__(self, code):

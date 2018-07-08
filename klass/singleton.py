@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+
 class Singleton(type):
     """
     Ensure a class only has one instance

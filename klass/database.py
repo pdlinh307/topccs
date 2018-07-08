@@ -19,9 +19,12 @@ class MySQLConnector(metaclass=Singleton):
         try:
             self.__cnx = mysql.connector.connect(option_files=self.__option_files, use_pure=True)
         except:
-            raise DBError('DB_CONNECT_ERROR')
+            raise DBError('CONNECT_ERROR')
 
     def cursor(self, **kwargs):
         if not self.__cnx.is_connected():
             self._connect()
         return self.__cnx.cursor(**kwargs)
+
+    def rollback(self):
+        self.__cnx.rollback()
