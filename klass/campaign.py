@@ -38,6 +38,7 @@ class Campaign(metaclass=Singleton):
             cursor.close()
 
     def cp_insert_one(self, json):
+        # todo: create schedule job
         try:
             date_format = self.__config['datetime_format']
             time_start = datetime.strptime(json['starttime'], date_format)
@@ -68,17 +69,17 @@ class Campaign(metaclass=Singleton):
             cursor.execute("UPDATE `campaigns` SET `status_closed` = TRUE "
                            "WHERE `campaign_id` = %s", (campaign_id,))
             return cursor.rowcount
-        except:
+        except Exception:
             raise DBError('DB_ERROR')
         finally:
             cursor.close()
 
     @staticmethod
-    def cp_update_one(campaign_id, data):
-        if type(data) is not dict or len(data) == 0:
-            raise CampaignError('CP_INVALID_PARAM')
-        args = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), data.keys())))
-        sql = "UPDATE `campaigns` SET {0} WHERE `campaign_id`={1}".format(args, campaign_id)
+    def cp_update(data, where):
+        keys = list(filter(lambda u: u not in where, data.keys()))
+        sets = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), keys)))
+        cods = ' AND '.join(list(map(lambda w: "{0} = %({0})s", where)))
+        sql = "UPDATE `campaigns` SET {0} WHERE {1}".format(sets, cods)
         cursor = db.cursor()
         try:
             cursor.execute(sql, data)
@@ -88,11 +89,31 @@ class Campaign(metaclass=Singleton):
         finally:
             cursor.close()
 
-    def cts_validate(self, contacts):
-        valid_contacts = list(filter(lambda c: self.__config['cts_required_field'] in c, contacts))
-        if len(valid_contacts) == 0:
-            raise CampaignError('CTS_EMPTY')
-        return valid_contacts
+    @staticmethod
+    def cts_select_one(where):
+        # Todo: gop 2 ham one & many thanh 1
+        cursor = db.cursor(dictionary=True)
+        cods = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
+        try:
+            cursor.execute("SELECT * FROM `cdr` WHERE {0} LIMIT 1".format(cods))
+            return cursor.fetchone()
+        except:
+            raise DBError('DB_ERROR')
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def cts_select_many(where):
+        cods = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
+        cursor = db.cursor(dictionary=True)
+        sql = "SELECT * FROM `cdr` WHERE {0}".format(cods)
+        try:
+            cursor.execute(sql, filter)
+            return cursor.fetchall()
+        except:
+            raise DBError('DB_ERROR')
+        finally:
+            cursor.close()
 
     @staticmethod
     def cts_insert_many(contacts, campaign_id):
@@ -108,38 +129,11 @@ class Campaign(metaclass=Singleton):
             cursor.close()
 
     @staticmethod
-    def cts_select_one(campaign_id, contact_id):
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute("SELECT * FROM `cdr` WHERE `campaign_id` = %s AND `contact_id` = %s LIMIT 1",
-                           (campaign_id, contact_id))
-            return cursor.fetchone()
-        except:
-            raise DBError('DB_ERROR')
-        finally:
-            cursor.close()
-
-    @staticmethod
-    def cts_select_many(filter):
-        if type(filter) is not dict or len(filter) == 0:
-            raise CampaignError('CP_INVALID_PARAM')
-        args = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), filter.keys())))
-        cursor = db.cursor(dictionary=True)
-        sql = "SELECT * FROM `cdr` WHERE {0}".format(args)
-        try:
-            cursor.execute(sql, filter)
-            return cursor.fetchall()
-        except:
-            raise DBError('DB_ERROR')
-        finally:
-            cursor.close()
-
-    @staticmethod
-    def cts_update_one(campaign_id, contact_id, data):
-        if type(data) is not dict or len(data) == 0:
-            raise CampaignError('CP_INVALID_PARAM')
-        args = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), data.keys())))
-        sql = "UPDATE `cdr` SET {0} WHERE `campaign_id`={1} AND `contact_id`={2}".format(args, campaign_id, contact_id)
+    def cts_update(data, where):
+        keys = list(filter(lambda u: u not in where, data.keys()))
+        sets = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), keys)))
+        cods = ' AND '.join(list(map(lambda w: "{0} = %({0})s", where)))
+        sql = "UPDATE `cdr` SET {0} WHERE {1}".format(sets, cods)
         cursor = db.cursor()
         try:
             cursor.execute(sql, data)
@@ -148,3 +142,9 @@ class Campaign(metaclass=Singleton):
             raise DBError('DB_ERROR')
         finally:
             cursor.close()
+
+    def cts_validate(self, contacts):
+        valid_contacts = list(filter(lambda c: self.__config['cts_required_field'] in c, contacts))
+        if len(valid_contacts) == 0:
+            raise CampaignError('CTS_EMPTY')
+        return valid_contacts

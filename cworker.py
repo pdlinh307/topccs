@@ -23,14 +23,12 @@ def finish_campaign(campaign_id):
         campaign = Campaign.cp_select_one(campaign_id=campaign_id)
         # Todo: check lai doan status nay cho chinh xac
         campaign_status = 'completed' if campaign['status_completed'] else 'cancel'
-    except DBError as e:
+    except (CampaignError, DBError) as e:
         logger.error("UPDATE:campaignid={0}|{1}".format(campaign_id, e.msg))
     else:
         payload = dict(
             campaignid=campaign_id,
-            typeid=campaign['type_id'],
             status=campaign_status,
-            retry=campaign['round'],
             contact_total=campaign['number_contacts'],
             contact_answered=campaign['number_contacts_success']
         )
@@ -45,8 +43,8 @@ def finish_campaign(campaign_id):
 def update_campaign(campaign_id, contact_id):
     crm_callback = conf_callback['update_campaign']
     try:
-        cdr = Campaign.cts_select_one(campaign_id=campaign_id, contact_id=contact_id)
-    except DBError as e:
+        cdr = Campaign.cts_select_one(filters=dict(campaign_id=campaign_id, contact_id=contact_id))
+    except (CampaignError, DBError) as e:
         logger.error("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
     else:
         payload = dict(
@@ -67,14 +65,5 @@ def update_campaign(campaign_id, contact_id):
         try:
             response = requests.post(url=crm_callback, json=payload, timeout=int(conf_callback['timeout']))
             logger.info("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, response.status_code))
-        except:
+        except Exception:
             logger.error("UPDATE:campaignid={0},contactid={1}|failed".format(campaign_id, contact_id))
-
-
-@celery_app.task()
-def update_cdr(campaign_id, contact_id, event):
-    try:
-        result = Campaign.cts_update_one(campaign_id, contact_id, event)
-        logger.info("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, bool(result)))
-    except (CampaignError, DBError) as e:
-        logger.error("UPDATE_CDR:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))

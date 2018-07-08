@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import asyncio
-# import pprint
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from klass.campaign import Campaign
@@ -73,7 +71,7 @@ def get_campaign(campaign_id):
 @app.route('/api/getCdr/<int:campaign_id>/<int:contact_id>', methods=['GET'])
 def get_cdr(campaign_id, contact_id):
     try:
-        cdr = camp.cts_select_one(campaign_id=campaign_id, contact_id=contact_id)
+        cdr = camp.cts_select_one(where=dict(campaign_id=campaign_id, contact_id=contact_id))
     except (CampaignError, DBError) as e:
         return jsonify(dict(error_msg=e.msg)), 400
     else:
@@ -84,8 +82,8 @@ def get_cdr(campaign_id, contact_id):
 
 
 def _create_job(campaign_id):
-    camp.cp_update_one(campaign_id, dict(status_scheduled=True))
-    contacts = camp.cts_select_many(filter=dict(campaign_id=campaign_id))
+    camp.cp_update(data=dict(status_scheduled=True), where=dict(campaign_id=campaign_id))
+    contacts = camp.cts_select_many(where=dict(campaign_id=campaign_id))
     now = datetime.now()
     for cts in contacts:
         scheduler.add_job(send_originate, 'date', run_date=now + timedelta(seconds=5),

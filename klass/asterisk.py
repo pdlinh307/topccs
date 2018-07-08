@@ -1,32 +1,42 @@
 # -*- coding: utf-8 -*-
-import asyncio
-import sys
-import pprint
-from panoramisk import CallManager, Manager
+from datetime import datetime
+from asterisk.ami import AMIClient, AutoReconnect, EventListener
 from klass.singleton import Singleton
 from klass.campaign import Campaign
 
 
 class AsteriskAMI(metaclass=Singleton):
-    __manager = None
+    __client = None
     __config = None
 
     def __init__(self, config):
         self.__config = config
-        self.__manager = Manager(**self.__config)
+        self.__client = AMIClient(address=self.__config['host'], port=int(self.__config['port']))
+        future = self.__client.login(username=self.__config['username'], secret=self.__config['secret'])
+        if future.response.is_error():
+            raise Exception(str(future.response))
+        AutoReconnect(self.__client)
+        self.__client.add_event_listener(EventListener(on_event=self.__event_listener_cdr, white_list='Cdr'))
 
     def __del__(self):
-        self.__manager.loop.close()
+        self.__client.logoff()
 
-    def run_forever(self):
-        self.__manager.connect()
-        self.__manager.loop.run_forever()
-
-    def register_event(self, pattern, callback):
-        self.__manager.register_event(pattern, callback)
-
-    def action(self, command):
-        yield from self.__manager.connect()
-        action_results = yield from self.__manager.send_action(**command)
-        self.__manager.close()
-
+    def __event_listener_cdr(self, source, event):
+        response = event.keys
+        if Campaign.cts_select_many(where=dict(uniqueid=response['UniqueID'])):
+            fmt = self.__config['datetime_format']
+            cdr = dict(
+                time_start=datetime.strftime(response['StartTime'], fmt),
+                time_end=datetime.strftime(response['EndTime'], fmt),
+                agent=response['Source'],
+                station_id=response['Source'],
+                duration=response['Duration'],
+                billsec=response['BillableSeconds'],
+                disposistion=response['Disposition'],
+                uniqueid=response['UniqueID'],
+                linkedid=response['Linkedid']
+            )
+            cdr['record_url'] = response['RecordingFile']
+            if response['AnswerTime'] != '':
+                cdr['time_answer'] = datetime.strftime(response['AnswerTime'], fmt)
+            Campaign.cts_update(data=cdr, where=['uniqueid'])

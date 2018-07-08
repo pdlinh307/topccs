@@ -1,33 +1,26 @@
-#!/usr/bin/python3.6
-# import sys
-import asyncio
-from panoramisk.call_manager import CallManager
-from klass import conf
+import time
+from asterisk.ami import AMIClient, EventListener, SimpleAction, AutoReconnect
 
 
-@asyncio.coroutine
-def originate():
-    phone = '0967289229'
-    conf_trunk = conf.section(name='trunk')
-    callmanager = CallManager()
-    yield from callmanager.connect()
-    call = yield from callmanager.send_originate({
-        'Action': 'Originate',
-        'Channel': '{0}/{1}'.format(conf_trunk['channel'], phone),
-        'Timeout': 20000,
-        'CallerID': phone,
-        'Exten': '1001',
-        'Context': conf_trunk['context'],
-        'Priority': 1
-    })
-    callmanager.clean_originate(call)
-    callmanager.close()
+def event_notification(source, event):
+    print('notify-send "%s" "%s"' % (event.name, str(event)))
 
 
 def main():
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(originate())
-    loop.close()
+    conf_connection = dict(address='42.116.18.41', port=5038)
+    conf_account = dict(username='callservice', secret='505e3ea75c1e21f4f288a83Dz2V9K')
+
+    ami = AMIClient(**conf_connection)
+    future = ami.login(**conf_account)
+    if future.response.is_error():
+        raise Exception(str(future.response))
+    AutoReconnect(ami)
+    ami.add_event_listener(EventListener(on_event=event_notification, white_list='Cdr'))
+    try:
+        while True:
+            time.sleep(5)
+    except (KeyboardInterrupt, SystemExit):
+        ami.logoff()
 
 
 if __name__ == '__main__':
