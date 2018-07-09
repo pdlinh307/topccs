@@ -34,7 +34,6 @@ DROP TABLE IF EXISTS `campaigns`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `campaigns` (
   `campaign_id` int(11) NOT NULL,
-  `type_id` int(11) DEFAULT 0,
   `time_start` datetime NOT NULL DEFAULT current_timestamp(),
   `time_end` datetime DEFAULT NULL,
   `time_last_call` datetime DEFAULT NULL,
