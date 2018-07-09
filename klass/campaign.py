@@ -21,7 +21,6 @@ class Campaign(metaclass=Singleton):
                 raise CampaignError('PARAM_MISS')
 
         cid = int(data['campaignid'])
-        tid = int(data['typeid'])
 
         # Check unique id
         if self.select_one(table='cdr', where=dict(campaign_id=cid)):
@@ -40,8 +39,8 @@ class Campaign(metaclass=Singleton):
         # Insert
         cursor = db.cursor()
         try:
-            cursor.execute("INSERT INTO `campaigns`(`campaign_id`, `type_id`, `time_start`, `time_end`)"
-                           "VALUES (%s, %s, %s, %s)", (cid, tid, time_start, time_end))
+            cursor.execute("INSERT INTO `campaigns`(`campaign_id`, `time_start`, `time_end`)"
+                           "VALUES (%s, %s, %s)", (cid, time_start, time_end))
             if cursor.rowcount == 1:
                 cts = list(filter(lambda c: self.__config['required_field_contacts'] in c, data['contact']))
                 cts = list(map(lambda c: (cid, int(c['id']), c['phonenumber'], c.get('linkedit', None)), cts))

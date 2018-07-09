@@ -1,9 +1,34 @@
+Tables of contents:
+- [Administrator's guide](#administrators-guide)
+    - [Requirements](#requirements)
+    - [Setting up environments](#setting-up-environments)
+        - [Database](#database)
+            - [Create database and user](#create-database-and-user)
+            - [Import](#import)
+        - [Python](#python)
+            - [Install pip](#install-pip)
+            - [Install required libs](#install-required-libs)
+            - [Install supervisor](#install-supervisor)
+    - [Configurations](#configurations)
+        - [Project's config](#projects-config)
+            - [MySQL](#mysql)
+            - [Project](#project)
+        - [Supervisor](#supervisor)
+            - [Supervisord](#supervisord)
+            - [Worker](#worker)
+            - [API](#api)
+        - [Asterisk](#asterisk)
+        - [Nginx (optional)](#nginx-optional)
+    - [Control processes](#control-processes)
+
 # Administrator's guide
+
 A step by step guide for system administrators or anyone else who might deploy this project.
 
 If you are CRM developer, please read [this document](apispecs.md).
 
 ## Requirements
+
 * *CentOS 7*
 * *MySQL 8.0 (recommended) or MariaDB (10.3)*
 * *Python >= 3.5 (3.6.x recommended)*
@@ -12,35 +37,51 @@ If you are CRM developer, please read [this document](apispecs.md).
 * *Nginx (optional)*
 
 ## Setting up environments
-### Database 
-#### Create database and user 
-Replace `db_name`, `hostname` and `db_password` with your username, hostname and password respectively. 
+
+### Database
+
+#### Create database and user
+
+Replace `db_name`, `hostname` and `db_password` with your username, hostname and password respectively.
+
 ```sql
 CREATE DATABASE IF NOT EXISTS `topccs` DEFAULT CHARACTER SET utf8;
 CREATE USER 'db_user'@'hostname' IDENTIFIED BY 'db_password';
 GRANT ALL ON topccs.* TO 'db_user'@'hostname';
 FLUSH PRIVILEGES;
 ```
+
 #### Import
+
 Replace `db_user` with username that created in previous step.
+
 ```bash
 mysql -u db_user -p topccs < topccs.sql
 ```
 
 ### Python
+
 #### Install pip
+
 Download [get-pip.py](https://bootstrap.pypa.io/get-pip.py).
+
 ```bash
 sudo python3.6 get-pip.py
 ``` 
+
 #### Install required libs
+
 Download project.
+
 ```bash
 cd /path/to/project
 sudo pip3.6 install -r requirements.txt
 ```
+
 #### Install supervisor
+
 Replace `nonroot` with normal user.
+
 ```bash
 sudo pip install supervisor
 sudo mkdir /etc/supervisor
@@ -52,8 +93,12 @@ sudo echo_supervisord_conf > /etc/supervisor/supervisord.conf
 ```
 
 ## Configurations
+
 ### Project's config
-**config/mysql.conf**
+
+#### MySQL
+
+config/mysql.conf
 
 ```ini
 [client]
@@ -65,7 +110,9 @@ database    = topccs
 autocommit  = True
 ```
 
-**config/app.conf**
+#### Project
+
+config/app.conf
 
 ```ini
 [ami]
@@ -89,7 +136,7 @@ rate_limit  = 2/m
 
 [api]
 datetime_format             = %%Y-%%m-%%d %%H:%%M:%%S
-required_fields_campaign    = campaignid,typeid,contact,starttime,endtime
+required_fields_campaign    = campaignid,contact,starttime,endtime
 required_field_contacts     = phonenumber
 
 [callback]
@@ -99,8 +146,10 @@ timeout         = 3
 ```
 
 ### Supervisor
+
 #### Supervisord
-**/etc/supervisor/supervisord.conf**
+
+/etc/supervisor/supervisord.conf
 
 ```ini
 # change 2 last rows
@@ -109,7 +158,8 @@ files = conf.d/*.ini
 ```
 
 #### Worker
-**/etc/supervisor/conf.d/topccs-wk.ini**
+
+/etc/supervisor/conf.d/topccs-wk.ini
 
 ```ini
 [program:topccs-wk]
@@ -123,7 +173,8 @@ stderr_logfile  = /var/log/supervisor/topccs-wk.err.log
 ```
 
 #### API
-**/etc/supervisor/conf.d/topccs-api.ini**
+
+/etc/supervisor/conf.d/topccs-api.ini
 
 ```ini
 [program:topccs-api]
@@ -137,14 +188,15 @@ stderr_logfile  = /var/log/supervisor/topccs-api.err.log
 ```
 
 ### Asterisk
-**/etc/asterisk/asterisk.conf**
+
+/etc/asterisk/asterisk.conf
 
 ```ini
 [options]
 systemname  = topinative
 ```
 
-**/etc/asterisk/cdr_manager.conf**
+/etc/asterisk/cdr_manager.conf
 
 ```ini
 [general]
@@ -156,7 +208,7 @@ did             => Did
 recordingfile   => RecordingFile
 ```
 
-**/etc/asterisk/manager.conf**
+/etc/asterisk/manager.conf
 
 ```ini
 [general]
@@ -165,7 +217,7 @@ timestampevents     = yes
 allowmultiplelogin  = yes
 ```
 
-**/etc/asterisk/manager_custom.conf**
+/etc/asterisk/manager_custom.conf
 
 ```ini
 [<ami_user>]
@@ -179,6 +231,7 @@ displayconnects = yes
 ```
 
 ### Nginx (optional)
+
 ```text
 server {
     listen 80;
@@ -200,8 +253,10 @@ server {
 }
 ```
 
-## Control process
-With normal user
+## Control processes
+
+Commands run by normal user to control supevisor processes
+
 ```bash
 # Start supervisor
 supervisord -c /etc/supervisor/supervisord.conf
