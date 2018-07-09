@@ -1,54 +1,36 @@
-# Tổng quan
-
-Tài liệu này được sử dụng tham chiếu cho quá trình tích hợp giữa Call Center Service (CCS) và phần mềm CRM.
-
-## Chú thích
-
-* `api_hostname`: địa chỉ của server hosting api
-* `api_port`: cổng được sử dụng để hosting api
-* `crm_hostname`: địa chỉ của server CRM API
-* `crm_port`: cổng của CRM API.
-
-## Nội dung
+Nội dung:
 
 - [Tổng quan](#t%E1%BB%95ng-quan)
-    - [Chú thích](#ch%C3%BA-th%C3%ADch)
-    - [Nội dung](#n%E1%BB%99i-dung)
 - [Mô tả các API](#m%C3%B4-t%E1%BA%A3-c%C3%A1c-api)
     - [CCS APIs](#ccs-apis)
         - [1. SEND CAMPAIGN](#1-send-campaign)
             - [Direction](#direction)
             - [INPUT](#input)
-                - [URL](#url)
-                - [Method](#method)
-                - [Headers](#headers)
-                - [Data](#data)
             - [OUTPUT](#output)
         - [2. CLOSE CAMPAIGN](#2-close-campaign)
             - [Direction](#direction)
             - [INPUT](#input)
-                - [URL](#url)
-                - [Method](#method)
-                - [Headers](#headers)
-                - [Tham số URI](#tham-s%E1%BB%91-uri)
             - [OUTPUT](#output)
     - [CRM APIs](#crm-apis)
         - [1. FINISH CAMPAIGN](#1-finish-campaign)
             - [Direction](#direction)
             - [INPUT](#input)
-                - [URL](#url)
-                - [Method](#method)
-                - [Headers](#headers)
-                - [Data](#data)
             - [OUTPUT](#output)
         - [2. UPDATE CAMPAIGN](#2-update-campaign)
             - [Direction](#direction)
             - [INPUT](#input)
-                - [URL](#url)
-                - [Method](#method)
-                - [Headers](#headers)
-                - [Data](#data)
             - [OUTPUT](#output)
+
+# Tổng quan
+
+Tài liệu này được sử dụng tham chiếu cho quá trình tích hợp giữa Call Center Service (CCS) và phần mềm CRM.
+
+**Chú thích:**
+
+* `api_hostname`: địa chỉ của server hosting api
+* `api_port`: cổng được sử dụng để hosting api
+* `crm_hostname`: địa chỉ của server CRM API
+* `crm_port`: cổng của CRM API.
 
 # Mô tả các API
 
