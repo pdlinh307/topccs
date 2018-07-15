@@ -2,7 +2,7 @@ import requests
 from celery import Celery
 from celery.utils.log import get_task_logger
 from klass.exceptions import DBError, CampaignError
-from klass import conf, camp
+from klass import conf, db
 
 celery_app = Celery('cworker', broker='redis://localhost:6379/1', backend='redis://localhost:6379/1')
 celery_app.config_from_object(dict(
@@ -19,7 +19,7 @@ conf_callback = conf.section(name='callback')
 def callback_campaign(campaign_id):
     crm_callback = conf_callback['finish_campaign']
     try:
-        campaign = camp.select_one(table='campaigns', where=dict(campaign_id=campaign_id))
+        campaign = db.select_one(table='campaigns', where=dict(campaign_id=campaign_id))
     except DBError as e:
         logger.error("CALLBACK_FINISH: campaignid={0}|{1}".format(campaign_id, e.msg))
     else:
@@ -44,16 +44,16 @@ def callback_campaign(campaign_id):
 
 
 @celery_app.task()
-def callback_cdr(campaign_id, contact_id):
+def callback_cdr(callid):
     crm_callback = conf_callback['update_campaign']
     try:
-        cdr = camp.select_one(table='cdr', where=dict(campaign_id=campaign_id, contact_id=contact_id))
+        cdr = db.select_one(table='cdr', where=dict(uniqueid=callid))
     except (CampaignError, DBError) as e:
-        logger.error("UPDATE:campaignid={0},contactid={1}|{2}".format(campaign_id, contact_id, e.msg))
+        logger.error("UPDATE:uniqueid={0}|{1}".format(callid, e.msg))
     else:
         payload = dict(
-            campaignid=campaign_id,
-            contact_id=contact_id,
+            campaignid=cdr['campaign_id'],
+            contact_id=cdr['contact_id'],
             phonenumber=cdr['phone_number'],
             agentcode=cdr['agent'],
             station_id=cdr['station_id'],

@@ -120,17 +120,17 @@ host            = <voip_server>
 port            = 5038
 user            = <ami_user>
 secret          = <ami_secret>
-datetime_format = %%Y-%%m-%%d %%H:%%M:%%S
+encoding        = utf-8
 
-[callservice]
+[originate]
 trunk       = SIP/mkt
 context     = from-internal
 queue       = 8000
-timeout     = 30
+timeout     = 30000
 priority    = 1
 
 [scheduler]
-retry       = 3
+retries     = 3
 interval    = 3600
 rate_limit  = 2/m
 
@@ -185,6 +185,21 @@ autorestart     = true
 startretries    = 5
 stdout_logfile  = /var/log/supervisor/topccs-api.out.log
 stderr_logfile  = /var/log/supervisor/topccs-api.err.log
+```
+
+#### Event Listener
+
+/etc/supervisor/conf.d/topccs-ltn.ini
+
+```ini
+[program:topccs-ltn]
+command         = /usr/bin/python3.6 event_listener.py
+directory       = /home/dev/topccs
+autostart       = true
+autorestart     = true
+startretries    = 5
+stdout_logfile  = /var/log/supervisor/topccs-ltn.out.log
+stderr_logfile  = /var/log/supervisor/topccs-ltn.err.log
 ```
 
 ### Asterisk

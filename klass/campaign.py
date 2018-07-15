@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from klass.exceptions import CampaignError, DBError
+from klass.exceptions import CampaignError
 from klass.singleton import Singleton
 from klass import db
 
@@ -21,9 +21,8 @@ class Campaign(metaclass=Singleton):
                 raise CampaignError('PARAM_MISS')
 
         cid = int(data['campaignid'])
-
         # Check unique id
-        if self.select_one(table='cdr', where=dict(campaign_id=cid)):
+        if db.select_one(table='cdr', where=dict(campaign_id=cid)):
             raise CampaignError('ID_EXISTED')
 
         # Parse datetime
@@ -37,58 +36,13 @@ class Campaign(metaclass=Singleton):
             raise CampaignError('DATETIME_FORMAT')
 
         # Insert
-        cursor = db.cursor()
-        try:
-            cursor.execute("INSERT INTO `campaigns`(`campaign_id`, `time_start`, `time_end`)"
-                           "VALUES (%s, %s, %s)", (cid, time_start, time_end))
-            if cursor.rowcount == 1:
-                cts = list(filter(lambda c: self.__config['required_field_contacts'] in c, data['contact']))
-                cts = list(map(lambda c: (cid, int(c['id']), c['phonenumber'], c.get('linkedit', None)), cts))
-                cursor.executemany("INSERT INTO `cdr`(`campaign_id`, `contact_id`, `phone_number`, `linkedit`)"
-                                   "VALUES (%s, %s, %s, %s)", cts)
-                return cursor.rowcount
-        except:
-            raise DBError('ERROR')
-        finally:
-            cursor.close()
+        db.insert_one(table='campaigns',
+                      data=dict(campaign_id=cid, time_start=time_start, time_end=time_end))
+        cts_valid = list(filter(lambda c: self.__config['required_field_contacts'] in c, data['contact']))
+        cts = list(map(lambda c: dict(campaign_id=cid,
+                                      contact_id=int(c['id']),
+                                      phone_number=c['phonenumber'],
+                                      linkedit=c.get('linkedit', None)), cts_valid))
+        db.insert_many(table='cdr', data=cts)
 
-    @staticmethod
-    def select_one(table, where):
-        wherestr = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
-        query = "SELECT * FROM {0} WHERE {1} LIMIT 1".format(table, wherestr)
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute(query)
-            return cursor.fetchone()
-        except:
-            raise DBError('ERROR')
-        finally:
-            cursor.close()
-
-    @staticmethod
-    def select_many(table, where):
-        wherestr = ' AND '.join(list(map(lambda k: "{0} = %({0})s".format(k), where.keys())))
-        query = "SELECT * FROM {0} WHERE {1}".format(table, wherestr)
-        cursor = db.cursor(dictionary=True)
-        try:
-            cursor.execute(query)
-            return cursor.fetchall()
-        except:
-            raise DBError('ERROR')
-        finally:
-            cursor.close()
-
-    @staticmethod
-    def update(table, where, data):
-        wherestr = ' AND '.join(list(map(lambda w: "{0} = %({0})s", where)))
-        keys = list(filter(lambda u: u not in where, data.keys()))
-        setstr = ', '.join(list(map(lambda k: "{0} = %({0})s".format(k), keys)))
-        query = "UPDATE {0} SET {1} WHERE {2}".format(table, setstr, wherestr)
-        cursor = db.cursor()
-        try:
-            cursor.execute(query, data)
-            return cursor.rowcount
-        except:
-            raise DBError('ERROR')
-        finally:
-            cursor.close()
+        return True
