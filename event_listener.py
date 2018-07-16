@@ -13,7 +13,6 @@ ami = Manager(loop=asyncio.get_event_loop(), **conf.section(name='asterisk'))
 @ami.register_event('Cdr')
 def listener_cdr(manager, event):
     if not db.select_one(table='cdr', where=dict(uniqueid=event['UniqueID'])):
-        print(event)
         return False
     fmt = "%Y-%m-%d %H:%M:%S"
     cdr = dict(
@@ -27,7 +26,7 @@ def listener_cdr(manager, event):
         uniqueid=event['UniqueID'],
         linkedid=event['Linkedid']
     )
-    cdr['record_url'] = event['RecordingFile']
+    cdr['record_url'] = 'http://42.116.18.42:8000/recordings/' + event['RecordingFile']
     if event['AnswerTime'] != '':
         cdr['time_answer'] = datetime.strptime(event['AnswerTime'], fmt)
     db.update(table='cdr', where=['uniqueid'], data=cdr)

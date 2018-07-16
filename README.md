@@ -3,8 +3,8 @@ This project was developed by [Realtel Vietnam](https://realtel.vn).
 
 ## Current version
 ```text
-Version: 0.2
-Release date: 29/06/2018
+Version: 1.0
+Release date: 16/07/2018
 ```
 
 # Documents
@@ -15,3 +15,4 @@ You are:
 # Release notes
 * **27/06/2018**: version `0.1`
 * **29/06/2018**: version `0.2`
+* **16/06/2018**: version `1.0`
