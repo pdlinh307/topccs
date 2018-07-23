@@ -1,10 +1,10 @@
 # Overview
-This project was developed by [Realtel Vietnam](https://realtel.vn).
+This project was developed by *Doan Van Hanh*.
 
 ## Current version
 ```text
-Version: 1.0
-Release date: 16/07/2018
+Version: 1.0.1
+Release date: 23/07/2018
 ```
 
 # Documents
@@ -16,3 +16,4 @@ You are:
 * **27/06/2018**: version `0.1`
 * **29/06/2018**: version `0.2`
 * **16/06/2018**: version `1.0`
+* **23/06/2018**: version `1.0.1`
