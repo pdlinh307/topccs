@@ -35,6 +35,8 @@ def callback_campaign(campaign_id):
         )
         response = requests.post(url=crm_callback, json=data, timeout=int(conf_callback['timeout']))
         logger.info("CALLBACK_CAMPAIGN: campaignid={0}|{1}".format(campaign_id, response.status_code))
+    except DBError as e:
+        logger.error("CALLBACK_CAMPAIGN: campaignid={0}|{1}".format(campaign_id, e.msg))
     except Exception:
         logger.error("CALLBACK_CAMPAIGN: campaignid={0}|failed".format(campaign_id))
 
@@ -44,9 +46,6 @@ def callback_cdr(callid):
     crm_callback = conf_callback['update_campaign']
     try:
         cdr = db.select_one(table='cdr', where=dict(uniqueid=callid))
-    except (CampaignError, DBError) as e:
-        logger.error("UPDATE:uniqueid={0}|{1}".format(callid, e.msg))
-    else:
         payload = dict(
             campaignid=cdr['campaign_id'],
             contact_id=cdr['contact_id'],
@@ -62,8 +61,9 @@ def callback_cdr(callid):
             status=cdr['disposition'],
             callid=cdr['uniqueid']
         )
-        try:
-            response = requests.post(url=crm_callback, json=payload, timeout=int(conf_callback['timeout']))
-            logger.info("CALLBACK_CDR: uniqueid={0}|{1}".format(cdr['uniqueid'], response.status_code))
-        except Exception:
-            logger.error("CALLBACK_CDR: uniqueid={0}|failed".format(cdr['uniqueid']))
+        response = requests.post(url=crm_callback, json=payload, timeout=int(conf_callback['timeout']))
+        logger.info("CALLBACK_CDR: uniqueid={0}|{1}".format(cdr['uniqueid'], response.status_code))
+    except DBError as e:
+        logger.error("CALLBACK_CDR: uniqueid={0}|{1}".format(callid, e.msg))
+    except Exception:
+        logger.error("CALLBACK_CDR: uniqueid={0}|failed".format(callid))

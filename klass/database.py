@@ -18,7 +18,7 @@ class MySQLConnector(metaclass=Singleton):
     def __connect(self):
         try:
             self.__cnx = mysql.connector.connect(option_files=self.__option_files, use_pure=True)
-        except:
+        except Exception:
             raise DBError('CONNECT_ERROR')
 
     def __cursor(self, **kwargs):
@@ -36,7 +36,7 @@ class MySQLConnector(metaclass=Singleton):
         try:
             cursor.execute(query, where)
             return cursor.fetchone()
-        except:
+        except Exception:
             raise DBError('ERROR')
         finally:
             cursor.close()
@@ -48,7 +48,7 @@ class MySQLConnector(metaclass=Singleton):
         try:
             cursor.execute(query, where)
             return cursor.fetchall()
-        except:
+        except Exception:
             raise DBError('ERROR')
         finally:
             cursor.close()
@@ -61,7 +61,7 @@ class MySQLConnector(metaclass=Singleton):
         try:
             cursor.execute(query, data)
             return cursor.rowcount
-        except:
+        except Exception:
             raise DBError('ERROR')
         finally:
             cursor.close()
@@ -74,7 +74,7 @@ class MySQLConnector(metaclass=Singleton):
         try:
             cursor.executemany(query, data)
             return cursor.rowcount
-        except:
+        except Exception:
             raise DBError('ERROR')
         finally:
             cursor.close()
@@ -88,7 +88,7 @@ class MySQLConnector(metaclass=Singleton):
         try:
             cursor.execute(query, data)
             return cursor.rowcount
-        except:
+        except Exception:
             raise DBError('ERROR')
         finally:
             cursor.close()
