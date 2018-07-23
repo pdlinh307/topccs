@@ -36,8 +36,8 @@ class Campaign(metaclass=Singleton):
             raise CampaignError('DATETIME_FORMAT')
 
         # Insert
-        db.insert_one(table='campaigns',
-                      data=dict(campaign_id=cid, time_start=time_start, time_end=time_end))
+        # Todo: start transaction, rollback if failure
+        db.insert_one(table='campaigns', data=dict(campaign_id=cid, time_start=time_start, time_end=time_end))
         cts_valid = list(filter(lambda c: self.__config['required_field_contacts'] in c, data['contact']))
         cts = list(map(lambda c: dict(campaign_id=cid,
                                       contact_id=int(c['id']),

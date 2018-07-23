@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from klass.exceptions import CampaignError, DBError
 from klass.campaign import Campaign
 from klass import conf, scheduler, db
+import cworker
 
 """ Initial Flask """
 app = Flask(__name__)
@@ -47,6 +48,7 @@ def close_campaign(cid):
             scheduler.remove_job(job_id=job.id)
         """ Update campaign """
         db.update(table='campaigns', where=['campaign_id'], data=dict(campaign_id=cid, status_closed=True))
+        cworker.callback_campaign.delay(campaign_id=cid)
     except DBError as e:
         return jsonify(dict(campaignid=cid, status=0, error_msg=e.msg)), 400
     else:
@@ -58,7 +60,7 @@ def create_jobs(cid):
     contacts = db.select_many(table='cdr', where=dict(campaign_id=cid))
     contacts = list(filter(lambda c: c['disposition'] != 'ANSWERED', contacts))
     if len(contacts) > 0:
-        now = datetime.now() + timedelta(seconds=10)
+        now = datetime.now() + timedelta(seconds=5)
         for cts in contacts:
             scheduler.add_job(func=send_originate,
                               trigger='date',
@@ -70,6 +72,7 @@ def create_jobs(cid):
 
 
 def send_originate(rid):
+    # todo: xac dinh so may le ranh trong queue
     result = subprocess.check_output('python3.6 originate.py {0}'.format(rid), shell=True).strip()
     uniqueid = result.decode('utf-8')
     db.update(table='cdr', where=['id'], data=dict(id=rid, uniqueid=uniqueid))

@@ -20,9 +20,6 @@ def callback_campaign(campaign_id):
     crm_callback = conf_callback['finish_campaign']
     try:
         campaign = db.select_one(table='campaigns', where=dict(campaign_id=campaign_id))
-    except DBError as e:
-        logger.error("CALLBACK_FINISH: campaignid={0}|{1}".format(campaign_id, e.msg))
-    else:
         status = 'RECEIVED'
         if campaign['status_completed']:
             status = 'COMPLETED'
@@ -36,11 +33,10 @@ def callback_campaign(campaign_id):
             contact_total=campaign['number_contacts'],
             contact_success=campaign['number_contacts_success']
         )
-        try:
-            response = requests.post(url=crm_callback, json=data, timeout=int(conf_callback['timeout']))
-            logger.info("CALLBACK_CAMPAIGN: campaignid={0}|{1}".format(campaign_id, response.status_code))
-        except Exception:
-            logger.error("CALLBACK_CAMPAIGN: campaignid={0}|failed".format(campaign_id))
+        response = requests.post(url=crm_callback, json=data, timeout=int(conf_callback['timeout']))
+        logger.info("CALLBACK_CAMPAIGN: campaignid={0}|{1}".format(campaign_id, response.status_code))
+    except Exception:
+        logger.error("CALLBACK_CAMPAIGN: campaignid={0}|failed".format(campaign_id))
 
 
 @celery_app.task()
