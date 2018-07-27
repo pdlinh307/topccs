@@ -144,6 +144,12 @@ required_field_contacts     = phonenumber
 finish_campaign = http://crm.native.vn/api/FinishCampaign
 update_campaign = http://crm.native.vn/api/UpdateCampaign
 timeout         = 3
+
+[redis]
+host            = localhost
+port            = 6379
+worker_db       = 1
+scheduler_db    = 2
 ```
 
 ### Supervisor
