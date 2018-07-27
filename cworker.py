@@ -4,7 +4,10 @@ from celery.utils.log import get_task_logger
 from klass.exceptions import DBError, CampaignError
 from klass import conf, db
 
-celery_app = Celery('cworker', broker='redis://localhost:6379/1', backend='redis://localhost:6379/1')
+conf_redis = conf.section(name='redis')
+celery_app = Celery('cworker',
+                    broker='redis://{0}:{1}/{2}'.format(conf_redis['host'], conf_redis['port'], conf_redis['worker_db']),
+                    backend='redis://{0}:{1}/{2}'.format(conf_redis['host'], conf_redis['port'], conf_redis['worker_db']))
 celery_app.config_from_object(dict(
     task_serializer='json',
     result_serializer='json',
