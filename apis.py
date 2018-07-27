@@ -28,7 +28,7 @@ def send_campaign():
         for i in range(retries):
             scheduler.add_job(func=create_jobs,
                               trigger='date',
-                              run_date=campaign['time_start'] + timedelta(seconds=(i*interval)),
+                              run_date=campaign['time_start'] + timedelta(seconds=(i * interval)),
                               args=[cid],
                               id='{0}.p{1}'.format(cid, i))
         db.update(table='campaigns', where=['campaign_id'], data=dict(campaign_id=cid, status_scheduled=True))
@@ -71,8 +71,12 @@ def create_jobs(cid):
     return True
 
 
-def send_originate(rid):
-    # todo: xac dinh so may le ranh trong queue
-    result = subprocess.check_output('python3.6 originate.py {0}'.format(rid), shell=True).strip()
-    uniqueid = result.decode('utf-8')
-    db.update(table='cdr', where=['id'], data=dict(id=rid, uniqueid=uniqueid))
+def send_originate(cdrid):
+    conf_originate = conf.section(name='originate')
+    queue = conf_originate['queue']
+    extension = subprocess.check_output('python3.6 originate.py -q {0}'.format(queue),
+                                        shell=True).strip().decode('utf-8')
+    if extension != '':
+        uniqueid = subprocess.check_output('python3.6 originate.py -o {0} {1}'.format(cdrid, extension),
+                                           shell=True).strip().decode('utf-8')
+        db.update(table='cdr', where=['id'], data=dict(id=cdrid, uniqueid=uniqueid))
