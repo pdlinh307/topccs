@@ -113,7 +113,7 @@ DELIMITER ;;
   ON `cdr`
   FOR EACH ROW
   BEGIN
-    IF NEW.disposition = 'ANSWERED' THEN
+    IF NEW.disposition = 'ANSWERED' AND OLD.disposition != 'ANSWERED' THEN
       update `campaigns` set `number_contacts_success` = `number_contacts_success` + 1 where `campaign_id` = NEW.campaign_id;
     end if;
   END */;;
