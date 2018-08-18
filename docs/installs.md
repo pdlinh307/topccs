@@ -17,6 +17,7 @@ Tables of contents:
             - [Supervisord](#supervisord)
             - [Worker](#worker)
             - [API](#api)
+            - [Event Listener](#event-listener)
         - [Asterisk](#asterisk)
         - [Nginx (optional)](#nginx-optional)
     - [Control processes](#control-processes)
@@ -196,17 +197,17 @@ stderr_logfile  = /var/log/supervisor/topccs-api.err.log
 
 #### Event Listener
 
-/etc/supervisor/conf.d/topccs-ltn.ini
+/etc/supervisor/conf.d/topccs-el.ini
 
 ```ini
-[program:topccs-ltn]
+[program:topccs-el]
 command         = /usr/bin/python3.6 event_listener.py
 directory       = /home/dev/topccs
 autostart       = true
 autorestart     = true
 startretries    = 5
-stdout_logfile  = /var/log/supervisor/topccs-ltn.out.log
-stderr_logfile  = /var/log/supervisor/topccs-ltn.err.log
+stdout_logfile  = /var/log/supervisor/topccs-el.out.log
+stderr_logfile  = /var/log/supervisor/topccs-el.err.log
 ```
 
 ### Asterisk
