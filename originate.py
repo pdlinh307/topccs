@@ -2,6 +2,7 @@
 #!/usr/bin/python3.6
 
 import sys
+import re
 import getopt
 import asyncio
 from panoramisk.manager import Manager
@@ -23,7 +24,9 @@ def queue_status(queue):
         print('')
     else:
         available_extensions_sorted = sorted(available_extensions, key=lambda k: k['CallsTaken'])
-        print(available_extensions_sorted[0]['Name'])
+        location = available_extensions_sorted[0]['Location']
+        m = re.search('(?<=\/)\d{3,5}(?=@)', location)
+        print(m.group(0))
 
 
 @asyncio.coroutine
@@ -43,7 +46,7 @@ def originate(cdrid, extension):
         Priority=conf_originate['priority'],
         Timeout=int(conf_originate['timeout']),
         WaitTime=25,
-        CallerID=job['phone_number'],
+        CallerID=job['callerid'],
         Async=True
     )
     responses = yield from manager.send_action(action=action, as_list=True)
