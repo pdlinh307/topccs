@@ -26,7 +26,8 @@ def listener_cdr(manager, event):
         uniqueid=event['UniqueID'],
         linkedid=event['Linkedid']
     )
-    cdr['record_url'] = conf.section(name='originate')['record_url'] + event['RecordingFile']
+    if event['RecordingFile'] != '':
+        cdr['record_url'] = conf.section(name='originate')['record_url'] + event['RecordingFile']
     if event['AnswerTime'] != '':
         cdr['time_answer'] = datetime.strptime(event['AnswerTime'], fmt)
     db.update(table='cdr', where=['uniqueid'], data=cdr)
